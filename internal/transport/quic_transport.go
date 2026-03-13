@@ -8,9 +8,46 @@ import (
 	"github.com/quic-go/quic-go"
 )
 
+// quicStream wraps quic.Stream to implement our domain Stream interface.
+
+type quicStream struct {
+	stream *quic.Stream
+}
+
+func (q *quicStream) Read(p []byte) (n int, err error) {
+	return q.stream.Read(p)
+}
+
+func (q *quicStream) Write(p []byte) (n int, err error) {
+	return q.stream.Write(p)
+}
+
+func (q *quicStream) Close() error {
+	return q.stream.Close()
+}
+
 // quicConnection wraps a quic.Connection to implement our domain Connection interface.
 type quicConnection struct {
 	conn *quic.Conn
+}
+
+// OpenStream initiates a new bidirectional stream to the remote peer.
+func (q *quicConnection) OpenStream(ctx context.Context) (Stream, error) {
+	// OpenStreamSync blocks until a stream can be opened (e.g., waiting for peer stream limits)
+	stream, err := q.conn.OpenStreamSync(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &quicStream{stream: stream}, nil
+}
+
+// AcceptStream waits for and accepts an incoming stream.
+func (q *quicConnection) AcceptStream(ctx context.Context) (Stream, error) {
+	stream, err := q.conn.AcceptStream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &quicStream{stream: stream}, nil
 }
 
 func (q *quicConnection) Close() error {

@@ -1,6 +1,7 @@
 package transport_test
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/tls"
@@ -67,4 +68,76 @@ func TestQUICTransport_DialAndListen_Success(t *testing.T) {
 	}
 
 	conn.Close()
+}
+
+func TestQUICTransport_StreamMultiplexing(t *testing.T) {
+	tlsCon := generateTestTLSConfig()
+	quicTransport := transport.NewQUICTransport(tlsCon)
+
+	listener, err := quicTransport.Listen("127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to start listener: %v", err)
+	}
+	defer listener.Close()
+
+	payload := []byte("TACTICAL-ECHO-PAYLOAD")
+	errChan := make(chan error, 1)
+
+	// Recieve Goroutine
+	go func() {
+		// Accept the incoming QUIC connection
+		serverConn, err := listener.Accept()
+		if err != nil {
+			errChan <- err
+			return
+		}
+		defer serverConn.Close()
+
+		// Accept multiplexer stream
+		stream, err := serverConn.AcceptStream(context.Background())
+		if err != nil {
+			errChan <- err
+			return
+		}
+		defer stream.Close()
+
+		// Read the payload
+		buff := make([]byte, 1024)
+		n, err := stream.Read(buff)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		if string(buff[:n]) != string(payload) {
+			errChan <- err // Payload mismatch
+			return
+		}
+		errChan <- nil
+	}()
+
+	// Sender (Dialer)
+	addr := listener.Addr().String()
+	clientConn, err := quicTransport.Dial(addr)
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer clientConn.Close()
+
+	// Open the bidirectional stream over the established connection
+	clientStream, err := clientConn.OpenStream(context.Background())
+	if err != nil {
+		t.Fatalf("failed to open stream: %v", err)
+	}
+	defer clientStream.Close()
+
+	// Write the payload
+	_, err = clientStream.Write(payload)
+	if err != nil {
+		t.Fatalf("failed to write the payload into the stream: %v", err)
+	}
+
+	if receiverErr := <-errChan; receiverErr != nil {
+		t.Fatalf("receiver encountered an error: %v", receiverErr)
+	}
 }
