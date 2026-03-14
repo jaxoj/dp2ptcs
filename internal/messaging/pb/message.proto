@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "dp2ptcs/internal/messaging/pb";
+
+enum MessageType {
+  CHAT = 0;
+  COMMAND = 1;
+  TELEMETRY = 2;
+}
+
+message TacticalMessage {
+  bytes sender_id = 1;
+  MessageType type = 2;
+  bytes payload = 3; // This will hold the Double Ratchet ciphertext
+}
