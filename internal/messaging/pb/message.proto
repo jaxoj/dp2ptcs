@@ -12,5 +12,6 @@ enum MessageType {
 message TacticalMessage {
   bytes sender_id = 1;
   MessageType type = 2;
-  bytes payload = 3; // This will hold the Double Ratchet ciphertext
+  bytes dh_public_key = 3;  // Ephemeral X25519 public key for the DH Ratchet (32 bytes)
+  bytes payload = 4;  // The ChaCha20-Poly1305 encrypted ciphertext and MAC
 }

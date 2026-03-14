@@ -31,8 +31,10 @@ func (m *MockSerializer) Decode(r io.Reader) (messaging.Message, error) {
 // MockSecureSession and MockSessionManager implement our crypto interfaces
 type MockSecureSession struct{}
 
-func (m *MockSecureSession) Encrypt(plaintext []byte) ([]byte, error) { return plaintext, nil }
-func (m *MockSecureSession) Decrypt(ciphertext []byte) ([]byte, error) {
+func (m *MockSecureSession) Encrypt(plaintext []byte) ([]byte, []byte, error) {
+	return plaintext, nil, nil
+}
+func (m *MockSecureSession) Decrypt(ciphertext, remoteDHPubKey []byte) ([]byte, error) {
 	// Simulate decrypting the payload by appending a suffix
 	return append(ciphertext, []byte("-DECRYPTED")...), nil
 }

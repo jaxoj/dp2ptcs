@@ -10,7 +10,8 @@ const (
 
 // Message is the core domain entity for data in transit.
 type Message struct {
-	SenderID []byte
-	Type     MessageType
-	Payload  []byte // This will hold the Double Ratchet encrypted ciphertext later
+	SenderID    []byte
+	Type        MessageType
+	DHPublicKey []byte // Ephemeral public key for Post-Compromise Security
+	Payload     []byte // This will hold the Double Ratchet encrypted ciphertext later
 }

@@ -86,8 +86,9 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 		return
 	}
 
-	// Ratchet the keys and decrypt the payload
-	decryptedPayload, err := session.Decrypt(msg.Payload)
+	// Ratchet the keys (if necessary) and decrypt the payload
+	// Notice we are now passing the msg.DHPublicKey from the header into the Decrypt method
+	decryptedPayload, err := session.Decrypt(msg.Payload, msg.DHPublicKey)
 	if err != nil {
 		log.Printf("Failed to decrypt payload from peer %x: %v", msg.SenderID, err)
 		// Drop the message. Do not pass unauthenticated/undecryptable data to the application.
