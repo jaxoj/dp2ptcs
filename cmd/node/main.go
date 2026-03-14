@@ -40,7 +40,7 @@ func run(out io.Writer, keyPath string, args []string) error {
 
 	// Interface Adapters ->  Wire the manager
 	manager := usecase.NewIdentityManager(store, entropy)
-	connectionManager := usecase.NewConnectionManager(discoverer)
+	connectionManager := usecase.NewConnectionManager(discoverer, nil)
 
 	// Execute Core Logic
 	identity, err := manager.LoadOrCreate()

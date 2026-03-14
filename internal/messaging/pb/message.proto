@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "dp2ptcs/internal/messaging/pb";
+
+enum MessageType {
+  CHAT = 0;
+  COMMAND = 1;
+  TELEMETRY = 2;
+}
+
+message TacticalMessage {
+  bytes sender_id = 1;
+  MessageType type = 2;
+  bytes dh_public_key = 3;  // Ephemeral X25519 public key for the DH Ratchet (32 bytes)
+  bytes payload = 4;  // The ChaCha20-Poly1305 encrypted ciphertext and MAC
+}
