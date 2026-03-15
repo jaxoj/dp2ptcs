@@ -39,11 +39,16 @@ func (m *MockSecureSession) Decrypt(ciphertext, remoteDHPubKey []byte) ([]byte, 
 	return append(ciphertext, []byte("-DECRYPTED")...), nil
 }
 
-type MockSessionManager struct{}
+type MockSessionManager struct {
+	// store sessions resulting from a successful handshake
+	sessions map[string]crypto.SecureSession
+}
 
 func (m *MockSessionManager) GetSession(remoteNodeID []byte) (crypto.SecureSession, error) {
 	return &MockSecureSession{}, nil
 }
+
+func (m *MockSessionManager) SetSession(remoteNodeID []byte, session crypto.SecureSession) {}
 
 // MockServerStream simulates an incoming QUIC stream containing a serialized JSON message.
 type MockServerStream struct {
@@ -94,6 +99,14 @@ func (m *MockServerTransport) Listen(address string) (transport.Listener, error)
 }
 func (m *MockServerTransport) Dial(address string) (transport.Connection, error) { return nil, nil }
 
+// MockHandshake bypasses cryptographic math and stream reading for testing NodeServer routing.
+type MockHandshake struct{}
+
+func (m *MockHandshake) Respond(ctx context.Context, stream io.ReadWriter) (crypto.SecureSession, []byte, error) {
+	// Immediately return our MockSecureSession and a dummy 32-byte identity key
+	return &MockSecureSession{}, bytes.Repeat([]byte{0xFF}, 32), nil
+}
+
 func TestNodeServer_AcceptsAndDecodesMessages(t *testing.T) {
 	mockTransport := &MockServerTransport{connData: []byte{0x01}} // Dymmy byte to trigger read
 
@@ -104,8 +117,9 @@ func TestNodeServer_AcceptsAndDecodesMessages(t *testing.T) {
 	}
 	mockSerializer := &MockSerializer{MsgToReturn: expectedMsg}
 	mockSessionMgr := &MockSessionManager{}
+	mockHandshake := &MockHandshake{}
 
-	server := usecase.NewNodeServer(mockTransport, mockSerializer, mockSessionMgr)
+	server := usecase.NewNodeServer(mockTransport, mockSerializer, mockSessionMgr, mockHandshake)
 
 	// We use a channel to capture the message received by the handler callback
 	receivedChan := make(chan messaging.Message, 1)
@@ -146,9 +160,10 @@ func TestNodeServer_DecodesAndDecryptMessage(t *testing.T) {
 
 	mockSerializer := &MockSerializer{MsgToReturn: encryptMsg}
 	mockSessionMgr := &MockSessionManager{}
+	mockHandshake := &MockHandshake{}
 
 	// Inject all three dependencies
-	server := usecase.NewNodeServer(mockTransport, mockSerializer, mockSessionMgr)
+	server := usecase.NewNodeServer(mockTransport, mockSerializer, mockSessionMgr, mockHandshake)
 
 	receivedChan := make(chan messaging.Message, 1)
 	handler := func(msg messaging.Message) {

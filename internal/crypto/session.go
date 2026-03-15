@@ -12,7 +12,8 @@ type SecureSession interface {
 	Decrypt(cipherText, remoteDHPubKey []byte) (plainText []byte, err error)
 }
 
-// SessionManager retrieves the correct cryptographic state for a specific remote peer.
+// SessionManager stores and retrieves the correct cryptographic state for a specific remote peer.
 type SessionManager interface {
 	GetSession(remoteNodeID []byte) (SecureSession, error)
+	SetSession(remoteNodeID []byte, session SecureSession)
 }
