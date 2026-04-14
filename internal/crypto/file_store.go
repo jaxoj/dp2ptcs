@@ -28,8 +28,8 @@ func NewFileIdentityStore(filePath string) *FileIdentityStore {
 
 // Save writes the private key of the identity to the specified file path with strict permissions.
 func (s *FileIdentityStore) Save(id *Identity) error {
-	// 0600 ensures only the owner can read/write.
-	return os.WriteFile(s.filePath, id.PrivateKey, 0600)
+	// Delegate to the OS-specific implementation
+	return saveFileSecure(s.filePath, id.PrivateKey)
 }
 
 func (s *FileIdentityStore) Load() (*Identity, error) {

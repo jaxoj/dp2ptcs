@@ -1,28 +1,33 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Go
+name: Go CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
+  test:
+    name: Build & Test
+    strategy:
+      matrix:
+        # Running on both Linux and Windows ensures your build tags (!windows) work
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
-  build:
-    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.25'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          # Enabling cache helps speed up Windows builds specifically
+          cache: true
 
-    - name: Build
-      run: go build -v ./...
+      - name: Build
+        run: go build -v ./...
 
-    - name: Test
-      run: go test -v ./...
+      - name: Test
+        # Windows requires no special shell flags for standard go test commands
+        run: go test -v ./...
