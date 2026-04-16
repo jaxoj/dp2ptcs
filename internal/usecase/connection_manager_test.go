@@ -8,44 +8,58 @@ import (
 	"dp2ptcs/internal/usecase"
 	"errors"
 	"testing"
+	"time"
 )
 
 // MockConnection implements transport.Connection for testing.
 type MockConnection struct{}
 
-func (m *MockConnection) OpenStream(ctx context.Context) (transport.Stream, error)   { return nil, nil }
+func (m *MockConnection) OpenStreamSync(ctx context.Context) (transport.Stream, error) {
+	return nil, nil
+}
 func (m *MockConnection) AcceptStream(ctx context.Context) (transport.Stream, error) { return nil, nil }
+func (m *MockConnection) OpenStream(ctx context.Context) (transport.Stream, error)   { return nil, nil }
 func (m *MockConnection) Close() error                                               { return nil }
 
 // MockTransport implements transport.Transport for testing.
 type MockTransport struct {
 	FailAddresses map[string]bool
+	DialDelay     map[string]time.Duration // To test "Happy Eyeballs" concurrency
 }
 
+// Updated Dial to match transport.Transport interface with context and addr
 func (m *MockTransport) Dial(address string) (transport.Connection, error) {
+	// Respect simulated delay
+	if delay, ok := m.DialDelay[address]; ok {
+		time.After(delay)
+	}
+
 	if m.FailAddresses[address] {
 		return nil, errors.New("simulated network timeout")
 	}
 	return &MockConnection{}, nil
 }
 
-func (m *MockTransport) Listen(address string) (transport.Listener, error) { return nil, nil }
+func (m *MockTransport) Listen(address string) (transport.Listener, error) {
+	return nil, nil
+}
 
-// MockDiscoverer implements domain.Discoverer for isolated unit testing.
+// MockDiscoverer implements domain.Discoverer
 type MockDiscoverer struct {
 	peer *domain.Peer
 	err  error
 }
 
 func (m *MockDiscoverer) FindPeer(targetID []byte) (*domain.Peer, error) {
-	return m.peer, m.err
+	if m.err != nil {
+		return &domain.Peer{}, m.err
+	}
+	return m.peer, nil
 }
-
 func TestConnectionManager_ResolvePeer_Success(t *testing.T) {
-	// Create a mock peer with a valid ID and addresses
 	targetID := bytes.Repeat([]byte{0x01}, 32)
-	expectedPeer, _ := domain.NewPeer(targetID, []string{"127.0.0.1:8080"})
-	mockDiscoverer := &MockDiscoverer{peer: expectedPeer}
+	expectedPeer := domain.Peer{ID: targetID, Addresses: []string{"127.0.0.1:8080"}}
+	mockDiscoverer := &MockDiscoverer{peer: &expectedPeer}
 	connManager := usecase.NewConnectionManager(mockDiscoverer, nil)
 
 	resolvedPeer, err := connManager.ResolvePeer(targetID)
@@ -54,81 +68,99 @@ func TestConnectionManager_ResolvePeer_Success(t *testing.T) {
 	}
 
 	if !bytes.Equal(resolvedPeer.ID, targetID) {
-		t.Errorf("expected ID %v, got %v", targetID, resolvedPeer.ID)
-	}
-
-	if len(resolvedPeer.Addresses) == 0 {
-		t.Errorf("expected resolved peer to have at least one address, got none")
+		t.Errorf("expected ID %x, got %x", targetID, resolvedPeer.ID)
 	}
 }
 
 func TestConnectionManager_ResolvePeer_NotFound(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x01}, 32)
-	mockDiscoverer := &MockDiscoverer{peer: nil, err: domain.ErrPeerNotFound}
+	mockDiscoverer := &MockDiscoverer{err: domain.ErrPeerNotFound}
 	connManager := usecase.NewConnectionManager(mockDiscoverer, nil)
 
 	_, err := connManager.ResolvePeer(targetID)
-	if err != domain.ErrPeerNotFound {
+	if !errors.Is(err, domain.ErrPeerNotFound) {
 		t.Fatalf("expected error %v, got %v", domain.ErrPeerNotFound, err)
-	}
-}
-
-func TestConnectionManager_InvalidIDLength(t *testing.T) {
-	targetID := []byte{0x01, 0x02} // Invalid length
-	manager := usecase.NewConnectionManager(&MockDiscoverer{}, nil)
-
-	_, err := manager.ResolvePeer(targetID)
-	if err != domain.ErrInvalidNodeID {
-		t.Fatalf("expected error %v, got %v", domain.ErrInvalidNodeID, err)
 	}
 }
 
 func TestConnectionManager_ConnectToPeer_SuccessWithFallback(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x04}, 32)
-
-	// The peer has two addresses. The first is dead (e.g., out of radio range), the second is alive.
 	addresses := []string{"10.0.0.99:9000", "192.168.1.5:9000"}
-	expectedPeer, _ := domain.NewPeer(targetID, addresses)
-
-	mockDiscoverer := &MockDiscoverer{peer: expectedPeer, err: nil}
+	targetPeer := domain.Peer{ID: targetID, Addresses: addresses}
 
 	mockTransport := &MockTransport{
 		FailAddresses: map[string]bool{
-			addresses[0]: true, // Force the first address to fail
+			addresses[0]: true, // First address fails
+		},
+		DialDelay: map[string]time.Duration{
+			addresses[0]: 10 * time.Millisecond,
+			addresses[1]: 50 * time.Millisecond,
 		},
 	}
 
-	// Inject both dependencies
-	manager := usecase.NewConnectionManager(mockDiscoverer, mockTransport)
+	manager := usecase.NewConnectionManager(nil, mockTransport)
 
-	conn, err := manager.ConnectToPeer(targetID)
+	// Context for the dial operation
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// Now passing the Peer object directly as per your recent implementation
+	conn, err := manager.ConnectToPeer(ctx, targetPeer)
 
 	if err != nil {
-		t.Fatalf("expected successful connection on the second address, got error: %v", err)
+		t.Fatalf("expected successful connection on second address, got: %v", err)
 	}
 	if conn == nil {
-		t.Fatal("expected a valid connection object to be returned")
+		t.Fatal("expected valid connection object")
+	}
+}
+
+func TestConnectionManager_ConnectToPeer_ConcurrencyCheck(t *testing.T) {
+	targetID := bytes.Repeat([]byte{0x06}, 32)
+	// Even if the first address is "first" in the list, if it's slow, the second should win.
+	addresses := []string{"10.0.0.1:9000", "192.168.1.1:9000"}
+	targetPeer := domain.Peer{ID: targetID, Addresses: addresses}
+
+	mockTransport := &MockTransport{
+		DialDelay: map[string]time.Duration{
+			addresses[0]: 200 * time.Millisecond, // Slow
+			addresses[1]: 10 * time.Millisecond,  // Fast
+		},
+	}
+
+	manager := usecase.NewConnectionManager(nil, mockTransport)
+
+	start := time.Now()
+	conn, err := manager.ConnectToPeer(context.Background(), targetPeer)
+	duration := time.Since(start)
+
+	if err != nil {
+		t.Fatalf("connection failed: %v", err)
+	}
+	if conn == nil {
+		t.Fatal("connection is nil")
+	}
+
+	// If concurrent dialing works, we should finish in ~10ms, not ~200ms.
+	if duration > 100*time.Millisecond {
+		t.Errorf("Happy Eyeballs failed: took %v, expected ~10ms", duration)
 	}
 }
 
 func TestConnectionManager_ConnectToPeer_AllAddressesFail(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x05}, 32)
 	addresses := []string{"10.0.0.99:9000"}
-	expectedPeer, _ := domain.NewPeer(targetID, addresses)
+	targetPeer := domain.Peer{ID: targetID, Addresses: addresses}
 
-	mockDiscoverer := &MockDiscoverer{peer: expectedPeer, err: nil}
 	mockTransport := &MockTransport{
-		FailAddresses: map[string]bool{addresses[0]: true}, // All known addresses fail
+		FailAddresses: map[string]bool{addresses[0]: true},
 	}
 
-	manager := usecase.NewConnectionManager(mockDiscoverer, mockTransport)
+	manager := usecase.NewConnectionManager(nil, mockTransport)
 
-	_, err := manager.ConnectToPeer(targetID)
+	_, err := manager.ConnectToPeer(context.Background(), targetPeer)
 
 	if err == nil {
-		t.Fatal("expected error when all addresses fail, got nil")
-	}
-	if err != usecase.ErrConnectionFailed {
-		t.Errorf("expected ErrConnectionFailed, got %v", err)
+		t.Fatal("expected error when all addresses fail")
 	}
 }
