@@ -2,6 +2,7 @@ package dht
 
 import (
 	"bytes"
+	"dp2ptcs/internal/domain"
 	"math/bits"
 	"sort"
 	"sync"
@@ -13,7 +14,7 @@ type RoutingTable struct {
 	localID []byte
 	k       int
 	// 256 buckets for a 256-bit ID space
-	buckets [256][]*Peer
+	buckets [256][]*domain.Peer
 	mu      sync.RWMutex
 }
 
@@ -30,7 +31,7 @@ func (rt *RoutingTable) K() int {
 
 // AddPeer attempts to insert a peer into the appropriate k-bucket.
 // Returns true if added, false if the bucket is full or the peer is ourselves.
-func (rt *RoutingTable) AddPeer(peer *Peer) bool {
+func (rt *RoutingTable) AddPeer(peer *domain.Peer) bool {
 	if bytes.Equal(rt.localID, peer.ID) {
 		return false // cannot add ourselves
 	}
@@ -82,14 +83,14 @@ func (rt *RoutingTable) TotalPeers() int {
 
 // ClosestPeers returns the 'count' number of peers from the routing table
 // that are mathematically closest to the provided targetID.
-func (rt *RoutingTable) ClosestPeers(targeID []byte, count int) []*Peer {
+func (rt *RoutingTable) ClosestPeers(targeID []byte, count int) []*domain.Peer {
 	rt.mu.RLock()
 
 	// Gather all peers from all buckets
 	// TODO: In a heavily optimized implementation, we would only search the target's bucket
 	// and fan out to adjacent buckets. For tactical constraints (max 5120 nodes),
 	// sorting the whole slice is highly performant and extremely robust.
-	var allPeers []*Peer
+	var allPeers []*domain.Peer
 	for _, bucket := range rt.buckets {
 		allPeers = append(allPeers, bucket...)
 	}

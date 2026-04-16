@@ -2,6 +2,7 @@ package dht
 
 import (
 	"context"
+	"dp2ptcs/internal/domain"
 	"dp2ptcs/internal/handshake"
 	"dp2ptcs/internal/messaging"
 	"dp2ptcs/internal/messaging/pb"
@@ -29,7 +30,7 @@ func NewNetworkRPCClient(tr transport.Transport, ser messaging.Serializer, hs *h
 }
 
 // FindNode dials a peer, secures the stream, and executes the FIND_NODE RPC.
-func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *Peer, targetID []byte) ([]*Peer, error) {
+func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *domain.Peer, targetID []byte) ([]*domain.Peer, error) {
 	if len(peer.Addresses) == 0 {
 		return nil, errors.New("peer has no known addresses")
 	}
@@ -101,9 +102,9 @@ func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *Peer, targetID []
 	}
 
 	// Map the Protobuf DTOs back to our Domain Entities
-	var closestPeers []*Peer
+	var closestPeers []*domain.Peer
 	for _, pInfo := range resp.ClosestPeers {
-		peerObj, err := NewPeer(pInfo.Id, pInfo.Addresses)
+		peerObj, err := domain.NewPeer(pInfo.Id, pInfo.Addresses)
 		if err != nil {
 			log.Printf("Received invalid peer ID in DHT response: %v", err)
 			continue // Skip malformed peers, don't crash the routing lookup

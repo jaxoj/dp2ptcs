@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"dp2ptcs/internal/dht"
+	"dp2ptcs/internal/domain"
 	"errors"
 	"sync"
 	"time"
@@ -24,7 +25,7 @@ func NewDiscoveryManager(service *dht.DHTService, client dht.RPCClient, localID 
 }
 
 // Bootstrap connects to a known entry-point node to join the network.
-func (m *DiscoveryManager) Bootstrap(ctx context.Context, bootstrapPeer *dht.Peer) error {
+func (m *DiscoveryManager) Bootstrap(ctx context.Context, bootstrapPeer *domain.Peer) error {
 	// Manually add the bootstrap node to our own routing table
 	// (Assuming you add an AddPeer method to DHTService or expose the table)
 	m.dhtService.Table.AddPeer(bootstrapPeer)
@@ -66,12 +67,12 @@ func (m *DiscoveryManager) FindPeer(ctx context.Context, targetID []byte) ([]str
 
 		var wg sync.WaitGroup
 		var mu sync.Mutex
-		var newlyDiscovered []*dht.Peer
+		var newlyDiscovered []*domain.Peer
 
 		// Execute concurrent RPCs
 		for _, p := range toQuery {
 			wg.Add(1)
-			go func(peer *dht.Peer) {
+			go func(peer *domain.Peer) {
 				defer wg.Done()
 
 				// Short timeout for individual hops in a tactical environment

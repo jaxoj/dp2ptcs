@@ -2,6 +2,7 @@ package dht
 
 import (
 	"bytes"
+	"dp2ptcs/internal/domain"
 	"sort"
 	"sync"
 )
@@ -11,18 +12,18 @@ type LookupTask struct {
 	targetID []byte
 	k        int
 
-	shortlist []*Peer
+	shortlist []*domain.Peer
 	visited   map[string]bool
 	mu        sync.Mutex
 }
 
-func NewLookupTask(target []byte, k int, initialPeers []*Peer) *LookupTask {
+func NewLookupTask(target []byte, k int, initialPeers []*domain.Peer) *LookupTask {
 	return &LookupTask{targetID: target, k: k, shortlist: initialPeers, visited: make(map[string]bool)}
 }
 
 // Run executes the iterative lookup logic.
 // TODO: In a real implementation, this would involve concurrent RPC calls to peers.
-func (t *LookupTask) GetNextToQuery() []*Peer {
+func (t *LookupTask) GetNextToQuery() []*domain.Peer {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -33,7 +34,7 @@ func (t *LookupTask) GetNextToQuery() []*Peer {
 		return bytes.Compare(distI, distJ) < 0
 	})
 
-	var toQuery []*Peer
+	var toQuery []*domain.Peer
 	for _, p := range t.shortlist {
 		idStr := string(p.ID)
 		if !t.visited[idStr] {
@@ -48,7 +49,7 @@ func (t *LookupTask) GetNextToQuery() []*Peer {
 }
 
 // AddPeers ingests newly discovered peers into the shortlist, ensuring no duplicates.
-func (t *LookupTask) AddPeers(peers []*Peer) {
+func (t *LookupTask) AddPeers(peers []*domain.Peer) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -67,7 +68,7 @@ func (t *LookupTask) AddPeers(peers []*Peer) {
 }
 
 // GetClosest returns the top k closest peers from the current shortlist.
-func (t *LookupTask) GetClosest() []*Peer {
+func (t *LookupTask) GetClosest() []*domain.Peer {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
