@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"dp2ptcs/internal/crypto"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -24,13 +23,8 @@ func TestFileIdentityStore_SaveAndLoad(t *testing.T) {
 		t.Fatalf("Failed to save identity: %v", err)
 	}
 
-	// Check file permissions (OPSEC requirement)
-	info, err := os.Stat(keyPath)
-	if err != nil {
-		t.Fatalf("Failed to stat key file: %v", err)
-	}
-	if info.Mode().Perm() != 0600 {
-		t.Fatalf("Key file permissions are not 0600: got %o", info.Mode().Perm())
+	if err := VerifyOnlyCurrentUserHasAccess(keyPath); err != nil {
+		t.Errorf("Permission check failed: %v", err)
 	}
 
 	loadedIdentity, err := store.Load()
