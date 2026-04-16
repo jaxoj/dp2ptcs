@@ -5,19 +5,38 @@ import (
 	"context"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
+// safeBuffer is a thread-safe wrapper around bytes.Buffer
+type safeBuffer struct {
+	b bytes.Buffer
+	m sync.Mutex
+}
+
+func (s *safeBuffer) Write(p []byte) (n int, err error) {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *safeBuffer) String() string {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.b.String()
+}
+
 func TestRun_InitializesTacticalNodeAndOutputsID(t *testing.T) {
 	tempDir := t.TempDir()
 	keyPath := filepath.Join(tempDir, "test_node.key")
-	var out bytes.Buffer // Captures standard output for verification
+	out := &safeBuffer{} // Captures standard output for verification
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err := run(ctx, &out, keyPath, "127.0.0.1:0", []string{})
+	err := run(ctx, out, keyPath, "127.0.0.1:0", []string{})
 	if err != nil && err != context.DeadlineExceeded && err != context.Canceled {
 		t.Fatalf("Expected app to run with no error, got %v", err)
 	}
@@ -36,14 +55,14 @@ func TestRun_InitializesTacticalNodeAndOutputsID(t *testing.T) {
 func TestRun_ResolvesKnownPeer(t *testing.T) {
 	tempDir := t.TempDir()
 	keyPath := filepath.Join(tempDir, "test_node.key")
-	var out bytes.Buffer // Captures standard output for verification
+	out := &safeBuffer{} // Captures standard output for verification
 
 	targetHex := strings.Repeat("aa", 32)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err := run(ctx, &out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
+	err := run(ctx, out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
 	if err != nil && err != context.DeadlineExceeded && err != context.Canceled {
 		t.Fatalf("Expected app to run with no error, got %v", err)
 	}
@@ -61,14 +80,14 @@ func TestRun_ResolvesKnownPeer(t *testing.T) {
 func TestRun_FailsToResolveKnownPeer(t *testing.T) {
 	tempDir := t.TempDir()
 	keyPath := filepath.Join(tempDir, "test_node.key")
-	var out bytes.Buffer
+	out := &safeBuffer{} // Captures standard output for verification
 
 	targetHex := strings.Repeat("bb", 32)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err := run(ctx, &out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
+	err := run(ctx, out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
 
 	if !strings.Contains(err.Error(), "peer not found") {
 		t.Errorf("expected peer not found error, got %v", err)
