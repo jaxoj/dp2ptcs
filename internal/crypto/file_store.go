@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -39,6 +40,10 @@ func (s *FileIdentityStore) Load() (*Identity, error) {
 			return nil, ErrNoIdentityFound
 		}
 		return nil, err
+	}
+
+	if len(data) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("invalid key size: expected %d, got %d", ed25519.PrivateKeySize, len(data))
 	}
 
 	priv := ed25519.PrivateKey(data)
