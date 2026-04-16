@@ -24,7 +24,24 @@ jobs:
           go-version: "1.25"
           # Enabling cache helps speed up Windows builds specifically
           cache: true
+      # Increase UDP buffer limits (Linux only)
+      - name: Increase UDP buffer limits (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo sysctl -w net.core.rmem_max=2500000
+          sudo sysctl -w net.core.wmem_max=2500000
 
+      # Optional: Attempt tweak on Windows (not always effective)
+      - name: Adjust UDP settings (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          try {
+            Set-NetUDPSetting -DynamicPortRangeStartPort 1024 -DynamicPortRangeNumberOfPorts 64511
+          } catch {
+            Write-Host "Skipping UDP tuning (not supported in runner)"
+          }
+      
       - name: Build
         run: go build -v ./...
 

@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"dp2ptcs/internal/crypto"
-	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
@@ -25,21 +23,8 @@ func TestFileIdentityStore_SaveAndLoad(t *testing.T) {
 		t.Fatalf("Failed to save identity: %v", err)
 	}
 
-	// OS aware permission checking
-	if runtime.GOOS == "windows" {
-		// We can call this because it's in the same 'crypto' package
-		// and we are testing internal members (crypto_test can access it if exported)
-		if err := crypto.VerifyOnlyCurrentUserHasAccess(keyPath); err != nil {
-			t.Errorf("Windows ACL Verification failed: %v", err)
-		}
-	} else {
-		info, err := os.Stat(keyPath)
-		if err != nil {
-			t.Fatalf("Failed to stat key file: %v", err)
-		}
-		if info.Mode().Perm() != 0600 {
-			t.Fatalf("Key file permissions are not 0600: got %o", info.Mode().Perm())
-		}
+	if err := VerifyOnlyCurrentUserHasAccess(keyPath); err != nil {
+		t.Errorf("Permission check failed: %v", err)
 	}
 
 	loadedIdentity, err := store.Load()
