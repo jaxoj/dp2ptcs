@@ -9,10 +9,14 @@ import (
 )
 
 // ProtobufSerializer implements Serializer using varint length-prefixed protocol buffers.
-type ProtobufSerialize struct{}
+type ProtobufSerializer struct{}
+
+func NewProtobufSerializer() *ProtobufSerializer {
+	return &ProtobufSerializer{}
+}
 
 // Encode writes the size of the message as a varint, followed by the protobuf bytes.
-func (ps *ProtobufSerialize) Encode(w io.Writer, msg Message) error {
+func (ps *ProtobufSerializer) Encode(w io.Writer, msg Message) error {
 	// Map our domain entity to Protobuf DTO
 	pbMsg := &pb.TacticalMessage{
 		SenderId:    msg.SenderID,
@@ -39,7 +43,7 @@ func (ps *ProtobufSerialize) Encode(w io.Writer, msg Message) error {
 	return err
 }
 
-func (ps *ProtobufSerialize) Decode(r io.Reader) (Message, error) {
+func (ps *ProtobufSerializer) Decode(r io.Reader) (Message, error) {
 	// Read the length prefix (varint)
 	varReader := byteReader{r}
 	length, err := binary.ReadUvarint(varReader)

@@ -11,7 +11,7 @@ import (
 
 // MessageHandler is a callback function defined by the higher-level application
 // to dictate what happens when a valid message arrives.
-type MessageHandler func(msg messaging.Message)
+type MessageHandler func(msg messaging.Message) *messaging.Message
 
 // Handshaker defines the interface for intercepting a stream and establishing a secure session.
 type Handshaker interface {
@@ -90,6 +90,7 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 	defer stream.Close()
 
 	for {
+
 		// Decode the stream into an encrypted Message struct using our abstraction
 		msg, err := s.serializer.Decode(stream)
 		if err != nil {
@@ -111,7 +112,27 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 
 		// Overwrite the ciphertext with the plaintext and pass to the application
 		msg.Payload = decryptedPayload
-		handler(msg)
+
+		// Execute the handler
+
+		responseMsg := handler(msg)
+
+		// If the application provided a response (e.g., a DHT reply), encrypt and send it back
+		if responseMsg != nil {
+			cipherResp, dhPubResp, err := session.Encrypt(responseMsg.Payload)
+			if err != nil {
+				log.Printf("Failed to encrypt response for peer %x: %v", remoteIdentPub[:8], err)
+				continue
+			}
+
+			responseMsg.Payload = cipherResp
+			responseMsg.DHPublicKey = dhPubResp
+
+			if err := s.serializer.Encode(stream, *responseMsg); err != nil {
+				log.Printf("Failed to write response to peer %x: %v", remoteIdentPub[:8], err)
+				return
+			}
+		}
 	}
 
 }

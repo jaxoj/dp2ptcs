@@ -1,4 +1,4 @@
-package usecase
+package handshake
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func NewHandshakeProtocol(identPriv, identPub []byte) *HandshakeProtocol {
 }
 
 // Initiate is called by the node dialing outbound to a peer.
-func (h *HandshakeProtocol) Initiate(ctx context.Context, stream io.ReadWriter) (*crypto.DoubleRatchetSession, error) {
+func (h *HandshakeProtocol) Initiate(ctx context.Context, stream io.ReadWriter) (crypto.SecureSession, error) {
 	// Generate local Ephemeral key pair for this specific connection
 	ephemPriv := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, ephemPriv); err != nil {
@@ -55,11 +55,12 @@ func (h *HandshakeProtocol) Initiate(ctx context.Context, stream io.ReadWriter) 
 	}
 
 	// Initialize and return the state machine
-	return crypto.NewDoubleRatchetSession(rootKey, ephemPriv, ephemPub, inboundMsg.EphemeralPub), nil
+	session := crypto.NewDoubleRatchetSession(rootKey, ephemPriv, ephemPub, inboundMsg.EphemeralPub)
+	return session, nil
 }
 
 // Respond is called by the NodeServer when a new inbound connection is accepted.
-func (h *HandshakeProtocol) Respond(ctx context.Context, stream io.ReadWriter) (*crypto.DoubleRatchetSession, []byte, error) {
+func (h *HandshakeProtocol) Respond(ctx context.Context, stream io.ReadWriter) (crypto.SecureSession, []byte, error) {
 	// Read the initiator's public keys FIRST
 	var inboundMsg messaging.HandshakeExchange
 	if err := inboundMsg.ReadFrom(stream); err != nil {
@@ -89,5 +90,6 @@ func (h *HandshakeProtocol) Respond(ctx context.Context, stream io.ReadWriter) (
 	}
 
 	// Initialize and return the state machine
-	return crypto.NewDoubleRatchetSession(rootKey, ephemPriv, ephemPub, inboundMsg.EphemeralPub), inboundMsg.IdentityPub, nil
+	session := crypto.NewDoubleRatchetSession(rootKey, ephemPriv, ephemPub, inboundMsg.EphemeralPub)
+	return session, inboundMsg.IdentityPub, nil
 }

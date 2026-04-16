@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"io"
+	"net"
 )
 
 // Stream represents a single, independent byte channel within a multiplexed Connection.
@@ -27,6 +28,7 @@ type Connection interface {
 type Listener interface {
 	Accept() (Connection, error)
 	Close() error
+	Addr() net.Addr
 }
 
 // Transport abstracts the underlying network dialing and listening mechanics.

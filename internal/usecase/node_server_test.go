@@ -8,6 +8,7 @@ import (
 	"dp2ptcs/internal/transport"
 	"dp2ptcs/internal/usecase"
 	"io"
+	"net"
 	"testing"
 	"time"
 )
@@ -87,7 +88,8 @@ type MockListener struct {
 func (m *MockListener) Accept() (transport.Connection, error) {
 	return &MockServerConnection{streamData: m.connData}, nil
 }
-func (m *MockListener) Close() error { return nil }
+func (m *MockListener) Close() error   { return nil }
+func (m *MockListener) Addr() net.Addr { return nil }
 
 // MockServerTransport returns our MockListener
 type MockServerTransport struct {
@@ -112,7 +114,7 @@ func TestNodeServer_AcceptsAndDecodesMessages(t *testing.T) {
 
 	expectedMsg := messaging.Message{
 		SenderID: []byte{0x01, 0x02, 0x03},
-		Type:     messaging.TypeTelementary,
+		Type:     messaging.TypeTelemetry,
 		Payload:  []byte("cpu_temp:45C"),
 	}
 	mockSerializer := &MockSerializer{MsgToReturn: expectedMsg}
@@ -123,8 +125,9 @@ func TestNodeServer_AcceptsAndDecodesMessages(t *testing.T) {
 
 	// We use a channel to capture the message received by the handler callback
 	receivedChan := make(chan messaging.Message, 1)
-	handler := func(msg messaging.Message) {
+	handler := func(msg messaging.Message) *messaging.Message {
 		receivedChan <- msg
+		return nil
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -166,8 +169,9 @@ func TestNodeServer_DecodesAndDecryptMessage(t *testing.T) {
 	server := usecase.NewNodeServer(mockTransport, mockSerializer, mockSessionMgr, mockHandshake)
 
 	receivedChan := make(chan messaging.Message, 1)
-	handler := func(msg messaging.Message) {
+	handler := func(msg messaging.Message) *messaging.Message {
 		receivedChan <- msg
+		return nil
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

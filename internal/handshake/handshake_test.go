@@ -1,11 +1,11 @@
-package usecase_test
+package handshake_test
 
 import (
 	"bytes"
 	"context"
 	"crypto/rand"
 	"dp2ptcs/internal/crypto"
-	"dp2ptcs/internal/usecase"
+	"dp2ptcs/internal/handshake"
 	"net"
 	"testing"
 	"time"
@@ -30,13 +30,13 @@ func TestHandshakeProtocol_EstablishSecureSession(t *testing.T) {
 	defer clientConn.Close()
 	defer serverConn.Close()
 
-	aliceHandshake := usecase.NewHandshakeProtocol(alicePriv, alicePub)
-	bobHandshake := usecase.NewHandshakeProtocol(bobPriv, bobPub)
+	aliceHandshake := handshake.NewHandshakeProtocol(alicePriv, alicePub)
+	bobHandshake := handshake.NewHandshakeProtocol(bobPriv, bobPub)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	var aliceSession, bobSession *crypto.DoubleRatchetSession
+	var aliceSession, bobSession crypto.SecureSession
 	var errA, errB error
 
 	// Run the Responder (Bob) in a goroutine

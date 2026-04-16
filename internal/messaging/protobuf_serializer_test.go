@@ -7,7 +7,7 @@ import (
 )
 
 func TestPotobugSerializer_EncodeDecode(t *testing.T) {
-	serialize := &messaging.ProtobufSerialize{}
+	serializer := &messaging.ProtobufSerializer{}
 
 	originalMsg := messaging.Message{
 		SenderID: []byte{0xDE, 0xAD, 0xBE, 0xEF}, // Simulated 32-byte Ed25519 public key
@@ -19,7 +19,7 @@ func TestPotobugSerializer_EncodeDecode(t *testing.T) {
 	var streamBuffer bytes.Buffer
 
 	// Encode the message
-	if err := serialize.Encode(&streamBuffer, originalMsg); err != nil {
+	if err := serializer.Encode(&streamBuffer, originalMsg); err != nil {
 		t.Fatalf("failed to encode message: %v", err)
 	}
 
@@ -29,7 +29,7 @@ func TestPotobugSerializer_EncodeDecode(t *testing.T) {
 	}
 
 	// Decode the message off the stream
-	decodedMsg, err := serialize.Decode(&streamBuffer)
+	decodedMsg, err := serializer.Decode(&streamBuffer)
 	if err != nil {
 		t.Fatalf("failed to decode message: %v", err)
 	}

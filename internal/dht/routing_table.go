@@ -24,6 +24,10 @@ func NewRoutingTable(localID []byte, bucketSize int) *RoutingTable {
 	}
 }
 
+func (rt *RoutingTable) K() int {
+	return rt.k
+}
+
 // AddPeer attempts to insert a peer into the appropriate k-bucket.
 // Returns true if added, false if the bucket is full or the peer is ourselves.
 func (rt *RoutingTable) AddPeer(peer *Peer) bool {

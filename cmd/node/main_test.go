@@ -12,7 +12,7 @@ func TestRun_InitializesTacticalNodeAndOutputsID(t *testing.T) {
 	keyPath := filepath.Join(tempDir, "test_node.key")
 	var out bytes.Buffer // Captures standard output for verification
 
-	err := run(&out, keyPath, []string{})
+	err := run(&out, keyPath, "127.0.0.1:0", []string{})
 	if err != nil {
 		t.Fatalf("Expected app to run with no error, got %v", err)
 	}
@@ -35,7 +35,7 @@ func TestRun_ResolvesKnownPeer(t *testing.T) {
 
 	targetHex := strings.Repeat("aa", 32)
 
-	err := run(&out, keyPath, []string{string(targetHex)})
+	err := run(&out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
 
 	if err != nil {
 		t.Fatalf("Expected app to run with no error, got %v", err)
@@ -58,7 +58,7 @@ func TestRun_FailsToResolveKnownPeer(t *testing.T) {
 
 	targetHex := strings.Repeat("bb", 32)
 
-	err := run(&out, keyPath, []string{targetHex})
+	err := run(&out, keyPath, "127.0.0.1:0", []string{targetHex})
 
 	if err == nil {
 		t.Fatal("expected error when resolving unknown peer, got nil")
