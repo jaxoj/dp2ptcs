@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestRun_InitializesTacticalNodeAndOutputsID(t *testing.T) {
@@ -12,8 +14,11 @@ func TestRun_InitializesTacticalNodeAndOutputsID(t *testing.T) {
 	keyPath := filepath.Join(tempDir, "test_node.key")
 	var out bytes.Buffer // Captures standard output for verification
 
-	err := run(&out, keyPath, []string{})
-	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	err := run(ctx, &out, keyPath, "127.0.0.1:0", []string{})
+	if err != nil && err != context.DeadlineExceeded && err != context.Canceled {
 		t.Fatalf("Expected app to run with no error, got %v", err)
 	}
 
@@ -35,9 +40,11 @@ func TestRun_ResolvesKnownPeer(t *testing.T) {
 
 	targetHex := strings.Repeat("aa", 32)
 
-	err := run(&out, keyPath, []string{string(targetHex)})
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 
-	if err != nil {
+	err := run(ctx, &out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
+	if err != nil && err != context.DeadlineExceeded && err != context.Canceled {
 		t.Fatalf("Expected app to run with no error, got %v", err)
 	}
 
@@ -58,12 +65,12 @@ func TestRun_FailsToResolveKnownPeer(t *testing.T) {
 
 	targetHex := strings.Repeat("bb", 32)
 
-	err := run(&out, keyPath, []string{targetHex})
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 
-	if err == nil {
-		t.Fatal("expected error when resolving unknown peer, got nil")
-	}
-	if !strings.Contains(err.Error(), "Peer not found") {
+	err := run(ctx, &out, keyPath, "127.0.0.1:0", []string{string(targetHex)})
+
+	if !strings.Contains(err.Error(), "peer not found") {
 		t.Errorf("expected peer not found error, got %v", err)
 	}
 }

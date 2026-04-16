@@ -150,3 +150,69 @@ To expand this beyond a portfolio project into a production-ready C2 system:
 * **Mobile Nodes:** Compiling the core Go logic via `gomobile` into Android/AAR libraries to run on ATAK (Android Team Awareness Kit) devices.
 
 ---
+
+## 16. QUIC UDP Buffer Warning (Important)
+
+When running this system with `quic-go`, you may encounter warnings related to UDP buffer sizes.
+
+This is expected behavior.
+
+QUIC operates entirely over UDP and implements its own congestion control and packet reassembly in user space (unlike TCP, which relies on kernel-level buffering). To sustain high-throughput communication without packet loss, `quic-go` attempts to allocate large UDP receive/send buffers (~7MB).
+
+However, most operating systems enforce conservative default limits on UDP buffer sizes to prevent memory exhaustion. As a result, the OS may cap the buffer (e.g., ~416 KB), triggering warnings like:
+
+> failed to sufficiently increase receive buffer size
+
+### Why This Matters
+
+The application will still run, but:
+
+* Throughput will be artificially limited
+* Packet loss increases under load
+* QUIC performance (especially over lossy links) degrades significantly
+
+For a tactical communication system operating in constrained or high-latency environments, this bottleneck is unacceptable.
+
+### The Fix: Increase OS UDP Buffer Limits
+
+You must explicitly allow larger UDP buffers at the OS level.
+
+#### Linux
+
+Temporarily set:
+
+```bash
+sudo sysctl -w net.core.rmem_max=2500000
+sudo sysctl -w net.core.wmem_max=2500000
+```
+
+Persist across reboots by adding to `/etc/sysctl.conf`:
+
+```bash
+net.core.rmem_max=2500000
+net.core.wmem_max=2500000
+```
+
+#### macOS
+
+```bash
+sudo sysctl -w kern.ipc.maxsockbuf=3145728
+```
+
+#### Windows
+
+Windows typically auto-tunes buffers, but you can mitigate related issues by running PowerShell as Administrator:
+
+```powershell
+Set-NetUDPSetting -DynamicPortRangeStartPort 1024 -DynamicPortRangeNumberOfPorts 64511
+```
+
+### Result
+
+After applying these settings and restarting the application:
+
+* The warning should disappear
+* QUIC operates without OS-level throttling
+* Network throughput and reliability improve significantly
+
+---

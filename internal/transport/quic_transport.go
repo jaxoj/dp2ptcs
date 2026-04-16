@@ -97,7 +97,7 @@ func (qt *QUICTransport) Dial(address string) (Connection, error) {
 	return &quicConnection{conn: conn}, nil
 }
 
-func (qt *QUICTransport) Listen(address string) (*quicListener, error) {
+func (qt *QUICTransport) Listen(address string) (Listener, error) {
 	listener, err := quic.ListenAddr(address, qt.tlsConf, nil)
 	if err != nil {
 		return nil, err

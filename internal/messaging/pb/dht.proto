@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "dp2ptcs/internal/messaging/pb";
+
+message PeerInfo {
+    bytes id = 1;
+    repeated string addresses = 2;
+}
+
+message FindNodeRequest {
+    bytes target_id = 1;
+}
+
+message FindNodeResponse {
+    repeated PeerInfo closest_peers = 1;
+}
+
+// Ping and Store can be added here later

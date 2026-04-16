@@ -5,7 +5,8 @@ type MessageType uint8
 const (
 	TypeChat MessageType = iota
 	TypeCommand
-	TypeTelementary // For automated device posture and health reports
+	TypeTelemetry // For automated device posture and health reports
+	TypeDHT       // Defines control-plane routing messages
 )
 
 // Message is the core domain entity for data in transit.

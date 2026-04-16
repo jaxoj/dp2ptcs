@@ -24,6 +24,10 @@ func NewRoutingTable(localID []byte, bucketSize int) *RoutingTable {
 	}
 }
 
+func (rt *RoutingTable) K() int {
+	return rt.k
+}
+
 // AddPeer attempts to insert a peer into the appropriate k-bucket.
 // Returns true if added, false if the bucket is full or the peer is ourselves.
 func (rt *RoutingTable) AddPeer(peer *Peer) bool {
@@ -100,7 +104,11 @@ func (rt *RoutingTable) ClosestPeers(targeID []byte, count int) []*Peer {
 		return bytes.Compare(distI, distJ) < 0
 	})
 
-	// Return up to 'count' peers
+	// Prevent out-of-bounds panics if we have fewer peers than requested
+	// and return up to count peers
+	if len(allPeers) < count {
+		count = len(allPeers)
+	}
 	return allPeers[:count]
 }
 

@@ -24,6 +24,7 @@ jobs:
           go-version: "1.25"
           # Enabling cache helps speed up Windows builds specifically
           cache: true
+      
       # Increase UDP buffer limits (Linux only)
       - name: Increase UDP buffer limits (Linux)
         if: runner.os == 'Linux'
