@@ -2,17 +2,17 @@ package network_test
 
 import (
 	"bytes"
-	"dp2ptcs/internal/dht"
+	"dp2ptcs/internal/domain"
 	"dp2ptcs/internal/network"
 	"testing"
 )
 
 func TestStaticDiscoverer_FindPeer_Sucess(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x0A}, 32)
-	bootstrapPeer, _ := dht.NewPeer(targetID, []string{"192.168.1.10:9000"})
+	bootstrapPeer, _ := domain.NewPeer(targetID, []string{"192.168.1.10:9000"})
 
 	// Create the discoverer with our known inviter peer
-	discoverer := network.NewStaticDiscoverer([]*dht.Peer{bootstrapPeer})
+	discoverer := network.NewStaticDiscoverer([]*domain.Peer{bootstrapPeer})
 
 	peer, err := discoverer.FindPeer(targetID)
 	if err != nil {
@@ -34,9 +34,9 @@ func TestStaticDiscoverer_FindPeer_Sucess(t *testing.T) {
 
 func TestStaticDiscoverer_FindPeer_NotFound(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x0B}, 32)
-	bootstrapPeer, _ := dht.NewPeer(bytes.Repeat([]byte{0x0A}, 32), []string{"192.168.1.10:9000"})
+	bootstrapPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0x0A}, 32), []string{"192.168.1.10:9000"})
 
-	discoverer := network.NewStaticDiscoverer([]*dht.Peer{bootstrapPeer})
+	discoverer := network.NewStaticDiscoverer([]*domain.Peer{bootstrapPeer})
 
 	_, err := discoverer.FindPeer(targetID)
 	if err == nil {

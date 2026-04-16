@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"dp2ptcs/internal/dht"
+	"dp2ptcs/internal/domain"
 	"dp2ptcs/internal/transport"
 	"errors"
 )
@@ -11,18 +11,18 @@ var ErrConnectionFailed = errors.New("failed to connect to any known addresses f
 
 // ConnectionManager orchestrates the resolution and connection to remote peers.
 type ConnectionManager struct {
-	discoverer dht.Discoverer
+	discoverer domain.Discoverer
 	transport  transport.Transport
 }
 
-func NewConnectionManager(discoverer dht.Discoverer, tr transport.Transport) *ConnectionManager {
+func NewConnectionManager(discoverer domain.Discoverer, tr transport.Transport) *ConnectionManager {
 	return &ConnectionManager{discoverer: discoverer, transport: tr}
 }
 
 // ResolvePeer queries the discovery mechanism to find the physical network addresses.
-func (cm *ConnectionManager) ResolvePeer(targetID []byte) (*dht.Peer, error) {
+func (cm *ConnectionManager) ResolvePeer(targetID []byte) (*domain.Peer, error) {
 	if len(targetID) != 32 {
-		return nil, dht.ErrInvalidNodeID
+		return nil, domain.ErrInvalidNodeID
 	}
 
 	peer, err := cm.discoverer.FindPeer(targetID)

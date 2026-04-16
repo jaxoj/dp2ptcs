@@ -1,4 +1,4 @@
-package dht
+package domain
 
 import "errors"
 
@@ -12,7 +12,7 @@ var ErrPeerNotFound = errors.New("Peer not found in the network")
 // It resides in the Entity layer of Clean Architecture.
 type Peer struct {
 	ID        []byte   // 32-byte unique identifier for the peer
-	Addresses []string // List of network addresses (e.g., "
+	Addresses []string // List of network addresses"
 }
 
 func NewPeer(id []byte, addresses []string) (*Peer, error) {
@@ -24,12 +24,4 @@ func NewPeer(id []byte, addresses []string) (*Peer, error) {
 		ID:        id,
 		Addresses: addresses,
 	}, nil
-}
-
-// Discoverer defines the interface for finding peers in the network.
-// This allows us to abstract away the underlying discovery mechanism (e.g., mDNS, Kademlia DHT).
-type Discoverer interface {
-	// FindPeer attempts to locate a peer by its Node ID.
-	// It returns the Peer if found, or an error if not found or if discovery fails.
-	FindPeer(id []byte) (*Peer, error)
 }

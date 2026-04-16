@@ -3,7 +3,7 @@ package usecase_test
 import (
 	"bytes"
 	"context"
-	"dp2ptcs/internal/dht"
+	"dp2ptcs/internal/domain"
 	"dp2ptcs/internal/transport"
 	"dp2ptcs/internal/usecase"
 	"errors"
@@ -31,20 +31,20 @@ func (m *MockTransport) Dial(address string) (transport.Connection, error) {
 
 func (m *MockTransport) Listen(address string) (transport.Listener, error) { return nil, nil }
 
-// MockDiscoverer implements dht.Discoverer for isolated unit testing.
+// MockDiscoverer implements domain.Discoverer for isolated unit testing.
 type MockDiscoverer struct {
-	peer *dht.Peer
+	peer *domain.Peer
 	err  error
 }
 
-func (m *MockDiscoverer) FindPeer(targetID []byte) (*dht.Peer, error) {
+func (m *MockDiscoverer) FindPeer(targetID []byte) (*domain.Peer, error) {
 	return m.peer, m.err
 }
 
 func TestConnectionManager_ResolvePeer_Success(t *testing.T) {
 	// Create a mock peer with a valid ID and addresses
 	targetID := bytes.Repeat([]byte{0x01}, 32)
-	expectedPeer, _ := dht.NewPeer(targetID, []string{"127.0.0.1:8080"})
+	expectedPeer, _ := domain.NewPeer(targetID, []string{"127.0.0.1:8080"})
 	mockDiscoverer := &MockDiscoverer{peer: expectedPeer}
 	connManager := usecase.NewConnectionManager(mockDiscoverer, nil)
 
@@ -64,12 +64,12 @@ func TestConnectionManager_ResolvePeer_Success(t *testing.T) {
 
 func TestConnectionManager_ResolvePeer_NotFound(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x01}, 32)
-	mockDiscoverer := &MockDiscoverer{peer: nil, err: dht.ErrPeerNotFound}
+	mockDiscoverer := &MockDiscoverer{peer: nil, err: domain.ErrPeerNotFound}
 	connManager := usecase.NewConnectionManager(mockDiscoverer, nil)
 
 	_, err := connManager.ResolvePeer(targetID)
-	if err != dht.ErrPeerNotFound {
-		t.Fatalf("expected error %v, got %v", dht.ErrPeerNotFound, err)
+	if err != domain.ErrPeerNotFound {
+		t.Fatalf("expected error %v, got %v", domain.ErrPeerNotFound, err)
 	}
 }
 
@@ -78,8 +78,8 @@ func TestConnectionManager_InvalidIDLength(t *testing.T) {
 	manager := usecase.NewConnectionManager(&MockDiscoverer{}, nil)
 
 	_, err := manager.ResolvePeer(targetID)
-	if err != dht.ErrInvalidNodeID {
-		t.Fatalf("expected error %v, got %v", dht.ErrInvalidNodeID, err)
+	if err != domain.ErrInvalidNodeID {
+		t.Fatalf("expected error %v, got %v", domain.ErrInvalidNodeID, err)
 	}
 }
 
@@ -88,7 +88,7 @@ func TestConnectionManager_ConnectToPeer_SuccessWithFallback(t *testing.T) {
 
 	// The peer has two addresses. The first is dead (e.g., out of radio range), the second is alive.
 	addresses := []string{"10.0.0.99:9000", "192.168.1.5:9000"}
-	expectedPeer, _ := dht.NewPeer(targetID, addresses)
+	expectedPeer, _ := domain.NewPeer(targetID, addresses)
 
 	mockDiscoverer := &MockDiscoverer{peer: expectedPeer, err: nil}
 
@@ -114,7 +114,7 @@ func TestConnectionManager_ConnectToPeer_SuccessWithFallback(t *testing.T) {
 func TestConnectionManager_ConnectToPeer_AllAddressesFail(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x05}, 32)
 	addresses := []string{"10.0.0.99:9000"}
-	expectedPeer, _ := dht.NewPeer(targetID, addresses)
+	expectedPeer, _ := domain.NewPeer(targetID, addresses)
 
 	mockDiscoverer := &MockDiscoverer{peer: expectedPeer, err: nil}
 	mockTransport := &MockTransport{

@@ -3,6 +3,7 @@ package dht_test
 import (
 	"bytes"
 	"dp2ptcs/internal/dht"
+	"dp2ptcs/internal/domain"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ func TestRoutingTable_AddPeer_Success(t *testing.T) {
 	// Create a peer that is exactly one but different (should go to bucket 255)
 	remoteID := bytes.Repeat([]byte{0x00}, 32)
 	remoteID[31] = 0x01
-	peer, _ := dht.NewPeer(remoteID, []string{"10.0.0.2:9000"})
+	peer, _ := domain.NewPeer(remoteID, []string{"10.0.0.2:9000"})
 
 	added := table.AddPeer(peer)
 
@@ -28,7 +29,7 @@ func TestRoutingTable_AddPeer_Success(t *testing.T) {
 func TestRoutingTable_AddPeer_RejectSelf(t *testing.T) {
 	localID := bytes.Repeat([]byte{0x00}, 32)
 	table := dht.NewRoutingTable(localID, 2)
-	selfPeer, _ := dht.NewPeer(localID, []string{"10.0.0.1:9000"})
+	selfPeer, _ := domain.NewPeer(localID, []string{"10.0.0.1:9000"})
 
 	added := table.AddPeer(selfPeer)
 
@@ -45,7 +46,7 @@ func TestRoutingTable_BucketFull(t *testing.T) {
 	for i := 1; i <= 3; i++ {
 		remoteID := bytes.Repeat([]byte{0x00}, 32)
 		remoteID[31] = 0x80 + byte(i) // 0x01, 0x02, 0x03 will all have similar distances
-		peer, _ := dht.NewPeer(remoteID, []string{"10.0.0.x:9000"})
+		peer, _ := domain.NewPeer(remoteID, []string{"10.0.0.x:9000"})
 
 		added := table.AddPeer(peer)
 
@@ -73,9 +74,9 @@ func TestRoutingTable_ClosestPeers(t *testing.T) {
 	p3ID := bytes.Repeat([]byte{0x00}, 32)
 	p3ID[31] = 0x02 // Distance: 2
 
-	p1, _ := dht.NewPeer(p1ID, []string{"10.0.0.1:9000"})
-	p2, _ := dht.NewPeer(p2ID, []string{"10.0.0.2:9000"})
-	p3, _ := dht.NewPeer(p3ID, []string{"10.0.0.3:9000"})
+	p1, _ := domain.NewPeer(p1ID, []string{"10.0.0.1:9000"})
+	p2, _ := domain.NewPeer(p2ID, []string{"10.0.0.2:9000"})
+	p3, _ := domain.NewPeer(p3ID, []string{"10.0.0.3:9000"})
 
 	// Add them out of order
 	table.AddPeer(p1)
