@@ -25,13 +25,6 @@ func main() {
 	keyPath := "node.key"
 	listenAddr := "0.0.0.0:9000" // In a real deployment, this might be passed via ENV or flags
 
-	if err := run(os.Stdout, keyPath, listenAddr, os.Args[1:]); err != nil {
-		log.Fatalf("[Fatal]: %v", err)
-	}
-}
-
-// run separates dependency injection and execution from the main() scope.
-func run(out io.Writer, keyPath, listenAddr string, args []string) error {
 	// Application Context (Handles graceful shutdown on CTRL+C)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -40,10 +33,17 @@ func run(out io.Writer, keyPath, listenAddr string, args []string) error {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigCh
-		fmt.Fprintln(out, "\nShutdown signal received. Securing node and halting...")
+		fmt.Println("\nShutdown signal received. Securing node and halting...")
 		cancel()
 	}()
 
+	if err := run(ctx, os.Stdout, keyPath, listenAddr, os.Args[1:]); err != nil {
+		log.Fatalf("[Fatal]: %v", err)
+	}
+}
+
+// run separates dependency injection and execution from the main() scope.
+func run(ctx context.Context, out io.Writer, keyPath, listenAddr string, args []string) error {
 	// ---------------------------------------------------------
 	// PHASE 1: Cryptography & Local Identity
 	// ---------------------------------------------------------

@@ -104,7 +104,11 @@ func (rt *RoutingTable) ClosestPeers(targeID []byte, count int) []*Peer {
 		return bytes.Compare(distI, distJ) < 0
 	})
 
-	// Return up to 'count' peers
+	// Prevent out-of-bounds panics if we have fewer peers than requested
+	// and return up to count peers
+	if len(allPeers) < count {
+		count = len(allPeers)
+	}
 	return allPeers[:count]
 }
 
