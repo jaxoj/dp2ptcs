@@ -104,7 +104,7 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 
 		// Ratchet the keys (if necessary) and decrypt the payload
 		// Notice we are now passing the msg.DHPublicKey from the header into the Decrypt method
-		decryptedPayload, err := session.Decrypt(msg.Payload, msg.DHPublicKey)
+		decryptedPayload, err := session.Decrypt(msg.Payload, msg.DHPublicKey, msg.MessageNumber, msg.PreviousChainLength)
 		if err != nil {
 			log.Printf("Decryption MAC failure from peer %x: tampering detected, dropping frame.", remoteIdentPub[:8]) // Drop the message. Do not pass unauthenticated/undecryptable data to the application.
 			continue
@@ -119,7 +119,7 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 
 		// If the application provided a response (e.g., a DHT reply), encrypt and send it back
 		if responseMsg != nil {
-			cipherResp, dhPubResp, err := session.Encrypt(responseMsg.Payload)
+			cipherResp, dhPubResp, msgNum, prevLen, err := session.Encrypt(responseMsg.Payload)
 			if err != nil {
 				log.Printf("Failed to encrypt response for peer %x: %v", remoteIdentPub[:8], err)
 				continue
@@ -127,6 +127,8 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 
 			responseMsg.Payload = cipherResp
 			responseMsg.DHPublicKey = dhPubResp
+			responseMsg.MessageNumber = msgNum
+			responseMsg.PreviousChainLength = prevLen
 
 			if err := s.serializer.Encode(stream, *responseMsg); err != nil {
 				log.Printf("Failed to write response to peer %x: %v", remoteIdentPub[:8], err)

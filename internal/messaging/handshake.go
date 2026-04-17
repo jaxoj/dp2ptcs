@@ -30,7 +30,7 @@ func (h *HandshakeExchange) ReadFrom(r io.Reader) error {
 	}
 
 	if _, err := io.ReadFull(r, h.EphemeralPub); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }

@@ -2,16 +2,15 @@
 // versions:
 // 	protoc-gen-go v1.25.0-devel
 // 	protoc        v3.14.0
-// source: dht.proto
+// source: internal/messaging/pb/dht.proto
 
 package pb
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -33,7 +32,7 @@ type PeerInfo struct {
 func (x *PeerInfo) Reset() {
 	*x = PeerInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dht_proto_msgTypes[0]
+		mi := &file_internal_messaging_pb_dht_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -46,7 +45,7 @@ func (x *PeerInfo) String() string {
 func (*PeerInfo) ProtoMessage() {}
 
 func (x *PeerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_dht_proto_msgTypes[0]
+	mi := &file_internal_messaging_pb_dht_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +58,7 @@ func (x *PeerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PeerInfo.ProtoReflect.Descriptor instead.
 func (*PeerInfo) Descriptor() ([]byte, []int) {
-	return file_dht_proto_rawDescGZIP(), []int{0}
+	return file_internal_messaging_pb_dht_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PeerInfo) GetId() []byte {
@@ -87,7 +86,7 @@ type FindNodeRequest struct {
 func (x *FindNodeRequest) Reset() {
 	*x = FindNodeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dht_proto_msgTypes[1]
+		mi := &file_internal_messaging_pb_dht_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -100,7 +99,7 @@ func (x *FindNodeRequest) String() string {
 func (*FindNodeRequest) ProtoMessage() {}
 
 func (x *FindNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dht_proto_msgTypes[1]
+	mi := &file_internal_messaging_pb_dht_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -113,7 +112,7 @@ func (x *FindNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FindNodeRequest.ProtoReflect.Descriptor instead.
 func (*FindNodeRequest) Descriptor() ([]byte, []int) {
-	return file_dht_proto_rawDescGZIP(), []int{1}
+	return file_internal_messaging_pb_dht_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *FindNodeRequest) GetTargetId() []byte {
@@ -134,7 +133,7 @@ type FindNodeResponse struct {
 func (x *FindNodeResponse) Reset() {
 	*x = FindNodeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dht_proto_msgTypes[2]
+		mi := &file_internal_messaging_pb_dht_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -147,7 +146,7 @@ func (x *FindNodeResponse) String() string {
 func (*FindNodeResponse) ProtoMessage() {}
 
 func (x *FindNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dht_proto_msgTypes[2]
+	mi := &file_internal_messaging_pb_dht_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -160,7 +159,7 @@ func (x *FindNodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FindNodeResponse.ProtoReflect.Descriptor instead.
 func (*FindNodeResponse) Descriptor() ([]byte, []int) {
-	return file_dht_proto_rawDescGZIP(), []int{2}
+	return file_internal_messaging_pb_dht_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *FindNodeResponse) GetClosestPeers() []*PeerInfo {
@@ -170,45 +169,46 @@ func (x *FindNodeResponse) GetClosestPeers() []*PeerInfo {
 	return nil
 }
 
-var File_dht_proto protoreflect.FileDescriptor
+var File_internal_messaging_pb_dht_proto protoreflect.FileDescriptor
 
-var file_dht_proto_rawDesc = []byte{
-	0x0a, 0x09, 0x64, 0x68, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70, 0x62, 0x22,
-	0x38, 0x0a, 0x08, 0x50, 0x65, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x0e, 0x0a, 0x02, 0x69,
-	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x61,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x22, 0x2e, 0x0a, 0x0f, 0x46, 0x69, 0x6e,
-	0x64, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09,
-	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
-	0x08, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x49, 0x64, 0x22, 0x45, 0x0a, 0x10, 0x46, 0x69, 0x6e,
-	0x64, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a,
-	0x0d, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x73, 0x74, 0x5f, 0x70, 0x65, 0x65, 0x72, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x70, 0x62, 0x2e, 0x50, 0x65, 0x65, 0x72, 0x49, 0x6e,
-	0x66, 0x6f, 0x52, 0x0c, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x73, 0x74, 0x50, 0x65, 0x65, 0x72, 0x73,
-	0x42, 0x1f, 0x5a, 0x1d, 0x64, 0x70, 0x32, 0x70, 0x74, 0x63, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65,
-	0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x69, 0x6e, 0x67, 0x2f, 0x70,
-	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_internal_messaging_pb_dht_proto_rawDesc = []byte{
+	0x0a, 0x1f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x69, 0x6e, 0x67, 0x2f, 0x70, 0x62, 0x2f, 0x64, 0x68, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x12, 0x02, 0x70, 0x62, 0x22, 0x38, 0x0a, 0x08, 0x50, 0x65, 0x65, 0x72, 0x49, 0x6e, 0x66,
+	0x6f, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x69,
+	0x64, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x22,
+	0x2e, 0x0a, 0x0f, 0x46, 0x69, 0x6e, 0x64, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x49, 0x64, 0x22,
+	0x45, 0x0a, 0x10, 0x46, 0x69, 0x6e, 0x64, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x0d, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x73, 0x74, 0x5f, 0x70,
+	0x65, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x70, 0x62, 0x2e,
+	0x50, 0x65, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x0c, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x73,
+	0x74, 0x50, 0x65, 0x65, 0x72, 0x73, 0x42, 0x1f, 0x5a, 0x1d, 0x64, 0x70, 0x32, 0x70, 0x74, 0x63,
+	0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x6d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x69, 0x6e, 0x67, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_dht_proto_rawDescOnce sync.Once
-	file_dht_proto_rawDescData = file_dht_proto_rawDesc
+	file_internal_messaging_pb_dht_proto_rawDescOnce sync.Once
+	file_internal_messaging_pb_dht_proto_rawDescData = file_internal_messaging_pb_dht_proto_rawDesc
 )
 
-func file_dht_proto_rawDescGZIP() []byte {
-	file_dht_proto_rawDescOnce.Do(func() {
-		file_dht_proto_rawDescData = protoimpl.X.CompressGZIP(file_dht_proto_rawDescData)
+func file_internal_messaging_pb_dht_proto_rawDescGZIP() []byte {
+	file_internal_messaging_pb_dht_proto_rawDescOnce.Do(func() {
+		file_internal_messaging_pb_dht_proto_rawDescData = protoimpl.X.CompressGZIP(file_internal_messaging_pb_dht_proto_rawDescData)
 	})
-	return file_dht_proto_rawDescData
+	return file_internal_messaging_pb_dht_proto_rawDescData
 }
 
-var file_dht_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_dht_proto_goTypes = []interface{}{
+var file_internal_messaging_pb_dht_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_internal_messaging_pb_dht_proto_goTypes = []interface{}{
 	(*PeerInfo)(nil),         // 0: pb.PeerInfo
 	(*FindNodeRequest)(nil),  // 1: pb.FindNodeRequest
 	(*FindNodeResponse)(nil), // 2: pb.FindNodeResponse
 }
-var file_dht_proto_depIdxs = []int32{
+var file_internal_messaging_pb_dht_proto_depIdxs = []int32{
 	0, // 0: pb.FindNodeResponse.closest_peers:type_name -> pb.PeerInfo
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -217,13 +217,13 @@ var file_dht_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_dht_proto_init() }
-func file_dht_proto_init() {
-	if File_dht_proto != nil {
+func init() { file_internal_messaging_pb_dht_proto_init() }
+func file_internal_messaging_pb_dht_proto_init() {
+	if File_internal_messaging_pb_dht_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_dht_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_internal_messaging_pb_dht_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PeerInfo); i {
 			case 0:
 				return &v.state
@@ -235,7 +235,7 @@ func file_dht_proto_init() {
 				return nil
 			}
 		}
-		file_dht_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_internal_messaging_pb_dht_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FindNodeRequest); i {
 			case 0:
 				return &v.state
@@ -247,7 +247,7 @@ func file_dht_proto_init() {
 				return nil
 			}
 		}
-		file_dht_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_internal_messaging_pb_dht_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FindNodeResponse); i {
 			case 0:
 				return &v.state
@@ -264,18 +264,18 @@ func file_dht_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_dht_proto_rawDesc,
+			RawDescriptor: file_internal_messaging_pb_dht_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_dht_proto_goTypes,
-		DependencyIndexes: file_dht_proto_depIdxs,
-		MessageInfos:      file_dht_proto_msgTypes,
+		GoTypes:           file_internal_messaging_pb_dht_proto_goTypes,
+		DependencyIndexes: file_internal_messaging_pb_dht_proto_depIdxs,
+		MessageInfos:      file_internal_messaging_pb_dht_proto_msgTypes,
 	}.Build()
-	File_dht_proto = out.File
-	file_dht_proto_rawDesc = nil
-	file_dht_proto_goTypes = nil
-	file_dht_proto_depIdxs = nil
+	File_internal_messaging_pb_dht_proto = out.File
+	file_internal_messaging_pb_dht_proto_rawDesc = nil
+	file_internal_messaging_pb_dht_proto_goTypes = nil
+	file_internal_messaging_pb_dht_proto_depIdxs = nil
 }

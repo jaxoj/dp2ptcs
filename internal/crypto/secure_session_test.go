@@ -20,7 +20,7 @@ func TestSummetricSession_EncryptDecrypt(t *testing.T) {
 	originalPlaintext := []byte("TARGET_COORDINATES_LOCKED")
 
 	// Alice encrypts
-	ciphertext, err := aliceSession.Encrypt(originalPlaintext)
+	ciphertext, _, _, _, err := aliceSession.Encrypt(originalPlaintext)
 	if err != nil {
 		t.Fatalf("Alice failed to encrypt: %v", err)
 	}
@@ -31,7 +31,7 @@ func TestSummetricSession_EncryptDecrypt(t *testing.T) {
 	}
 
 	// Bob decrypts
-	decryptedPlaintext, err := bobSession.Decrypt(ciphertext)
+	decryptedPlaintext, err := bobSession.Decrypt(ciphertext, nil, 0, 0)
 	if err != nil {
 		t.Fatalf("Bob failed to decrypt: %v", err)
 	}

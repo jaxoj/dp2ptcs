@@ -65,17 +65,19 @@ func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *domain.Peer, targ
 	}
 
 	// Encrypt the payload using the Double Ratchet
-	ciphertext, dhPubKey, err := session.Encrypt(reqBytes)
+	ciphertext, dhPubKey, msgNum, prevLen, err := session.Encrypt(reqBytes)
 	if err != nil {
 		return nil, err
 	}
 
 	// Frame the message
 	msg := messaging.Message{
-		SenderID:    c.localID,
-		Type:        messaging.TypeDHT,
-		DHPublicKey: dhPubKey,
-		Payload:     ciphertext,
+		SenderID:            c.localID,
+		Type:                messaging.TypeDHT,
+		DHPublicKey:         dhPubKey,
+		Payload:             ciphertext,
+		MessageNumber:       msgNum,
+		PreviousChainLength: prevLen,
 	}
 
 	// Send the request over the wire
@@ -90,7 +92,7 @@ func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *domain.Peer, targ
 	}
 
 	// Decrypt the response
-	plaintext, err := session.Decrypt(respMsg.Payload, respMsg.DHPublicKey)
+	plaintext, err := session.Decrypt(respMsg.Payload, respMsg.DHPublicKey, respMsg.MessageNumber, respMsg.PreviousChainLength)
 	if err != nil {
 		return nil, errors.New("failed to authenticate DHT response")
 	}
