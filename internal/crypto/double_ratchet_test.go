@@ -67,47 +67,90 @@ func TestDoubleRatchetSession_ConcurrentEncryptDecrypt(t *testing.T) {
 	const goroutines = 8
 	const iterations = 200
 
-	var wg sync.WaitGroup
-	wg.Add(goroutines * 2)
+	type networkPayload struct {
+		ciphertext []byte
+		pubKey     []byte
+		msgNum     uint32
+		prevLen    uint32
+		original   []byte
+	}
 
-	// Producer goroutines: Alice encrypts repeatedly
+	// Use channels to decouple the sender and receiver, simulating an asynchronous network.
+	aliceToBob := make(chan networkPayload, goroutines*iterations)
+	bobToAlice := make(chan networkPayload, goroutines*iterations)
+
+	var wgProduce sync.WaitGroup
+	wgProduce.Add(goroutines * 2)
+
+	// Producer: Alice encrypts concurrently
 	for g := 0; g < goroutines; g++ {
 		go func(id int) {
-			defer wg.Done()
+			defer wgProduce.Done()
 			for i := 0; i < iterations; i++ {
-				msg := []byte(fmt.Sprintf("msg-%d-%d", id, i))
+				msg := []byte(fmt.Sprintf("msg-a2b-%d-%d", id, i))
 				ct, pub, msgNum, prevLen, err := alice.Encrypt(msg)
 				if err != nil {
 					t.Errorf("alice encrypt error: %v", err)
 					return
 				}
-				// Simulate network delivery to Bob
-				if _, err := bob.Decrypt(ct, pub, msgNum, prevLen); err != nil {
-					t.Errorf("bob decrypt error: %v", err)
-					return
-				}
+				aliceToBob <- networkPayload{ct, pub, msgNum, prevLen, msg}
 			}
 		}(g)
 	}
 
-	// Producer goroutines: Bob encrypts repeatedly and Alice decrypts
+	// Producer: Bob encrypts concurrently
 	for g := 0; g < goroutines; g++ {
 		go func(id int) {
-			defer wg.Done()
+			defer wgProduce.Done()
 			for i := 0; i < iterations; i++ {
-				msg := []byte(fmt.Sprintf("bmsg-%d-%d", id, i))
+				msg := []byte(fmt.Sprintf("msg-b2a-%d-%d", id, i))
 				ct, pub, msgNum, prevLen, err := bob.Encrypt(msg)
 				if err != nil {
 					t.Errorf("bob encrypt error: %v", err)
 					return
 				}
-				if _, err := alice.Decrypt(ct, pub, msgNum, prevLen); err != nil {
-					t.Errorf("alice decrypt error: %v", err)
-					return
-				}
+				bobToAlice <- networkPayload{ct, pub, msgNum, prevLen, msg}
 			}
 		}(g)
 	}
 
-	wg.Wait()
+	// Block until all network traffic is generated, then seal the queues.
+	wgProduce.Wait()
+	close(aliceToBob)
+	close(bobToAlice)
+
+	var wgConsume sync.WaitGroup
+	wgConsume.Add(2)
+
+	// Consumer: Bob decrypts Alice's messages
+	go func() {
+		defer wgConsume.Done()
+		for payload := range aliceToBob {
+			decrypted, err := bob.Decrypt(payload.ciphertext, payload.pubKey, payload.msgNum, payload.prevLen)
+			if err != nil {
+				t.Errorf("bob decrypt error: %v", err)
+				return
+			}
+			if !bytes.Equal(decrypted, payload.original) {
+				t.Errorf("bob payload mismatch: got %s, want %s", decrypted, payload.original)
+			}
+		}
+	}()
+
+	// Consumer: Alice decrypts Bob's messages
+	go func() {
+		defer wgConsume.Done()
+		for payload := range bobToAlice {
+			decrypted, err := alice.Decrypt(payload.ciphertext, payload.pubKey, payload.msgNum, payload.prevLen)
+			if err != nil {
+				t.Errorf("alice decrypt error: %v", err)
+				return
+			}
+			if !bytes.Equal(decrypted, payload.original) {
+				t.Errorf("alice payload mismatch: got %s, want %s", decrypted, payload.original)
+			}
+		}
+	}()
+
+	wgConsume.Wait()
 }
