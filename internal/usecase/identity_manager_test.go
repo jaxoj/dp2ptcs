@@ -14,23 +14,25 @@ type MockStore struct {
 	err error
 }
 
-func (m *MockStore) Save(id *crypto.Identity) error {
+func (m *MockStore) Save(id *crypto.Identity, passphrase string) error {
 	m.id = id
 	return m.err
 }
 
-func (m *MockStore) Load() (*crypto.Identity, error) {
+func (m *MockStore) Load(passphrase string) (*crypto.Identity, error) {
 	if m.id == nil {
 		return nil, crypto.ErrNoIdentityFound
 	}
 	return m.id, m.err
 }
 
+const passphrase = "operation-alpha-key"
+
 func TestIdentityManager_LoadOrCreate_CreatesNew(t *testing.T) {
 	mockStore := &MockStore{}
 	manager := usecase.NewIdentityManager(mockStore, rand.Reader)
 
-	id, err := manager.LoadOrCreate()
+	id, err := manager.LoadOrCreate(passphrase)
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -48,7 +50,7 @@ func TestIdentityManager_LoadOrCreate_LoadsExisting(t *testing.T) {
 	mockStore := &MockStore{id: existingId}
 	manager := usecase.NewIdentityManager(mockStore, rand.Reader)
 
-	id, err := manager.LoadOrCreate()
+	id, err := manager.LoadOrCreate(passphrase)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

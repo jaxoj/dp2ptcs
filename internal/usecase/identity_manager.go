@@ -18,8 +18,8 @@ func NewIdentityManager(store crypto.IdentityStore, entropy io.Reader) *Identity
 	}
 }
 
-func (m *IdentityManager) LoadOrCreate() (*crypto.Identity, error) {
-	id, err := m.store.Load()
+func (m *IdentityManager) LoadOrCreate(passphrase string) (*crypto.Identity, error) {
+	id, err := m.store.Load(passphrase)
 	if err == nil {
 		return id, nil // Successfully loaded existing identity
 	}
@@ -34,7 +34,7 @@ func (m *IdentityManager) LoadOrCreate() (*crypto.Identity, error) {
 	}
 
 	// Presist the newly generated identity
-	err = m.store.Save(id)
+	err = m.store.Save(id, passphrase)
 	if err != nil {
 		return nil, err
 	}

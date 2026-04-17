@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestFileIdentityStore_SaveAndLoad(t *testing.T) {
+func TestFileIdentityStore_SaveAndLoad_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	keyPath := filepath.Join(tempDir, "node.key")
 	store := crypto.NewFileIdentityStore(keyPath)
@@ -18,21 +18,24 @@ func TestFileIdentityStore_SaveAndLoad(t *testing.T) {
 		t.Fatalf("Failed to generate identity: %v", err)
 	}
 
-	err = store.Save(originalIdentity)
+	passphrase := "operation-alpha-key"
+
+	err = store.Save(originalIdentity, passphrase)
 	if err != nil {
-		t.Fatalf("Failed to save identity: %v", err)
+		t.Fatalf("Failed to save encrypted identity: %v", err)
 	}
 
+	// Ensure OS-level permissions are still enforced as a defense-in-depth measure
 	if err := VerifyOnlyCurrentUserHasAccess(keyPath); err != nil {
 		t.Errorf("Permission check failed: %v", err)
 	}
 
-	loadedIdentity, err := store.Load()
+	loadedIdentity, err := store.Load(passphrase)
 	if err != nil {
-		t.Fatalf("Failed to load identity: %v", err)
+		t.Fatalf("Failed to load and decrypt identity: %v", err)
 	}
 
-	// Verify integrity of loaded identity
+	// Verify cryptographic integrity of loaded identity
 	if !bytes.Equal(originalIdentity.PrivateKey, loadedIdentity.PrivateKey) {
 		t.Fatalf("Loaded private key does not match original")
 	}
@@ -44,13 +47,35 @@ func TestFileIdentityStore_SaveAndLoad(t *testing.T) {
 	}
 }
 
+func TestFileIdentityStore_Load_WrongPassphrase(t *testing.T) {
+	tempDir := t.TempDir()
+	keyPath := filepath.Join(tempDir, "node.key")
+	store := crypto.NewFileIdentityStore(keyPath)
+
+	originalIdentity, _ := crypto.GenerateIdentity(rand.Reader)
+	err := store.Save(originalIdentity, "correct-passphrase")
+	if err != nil {
+		t.Fatalf("Setup failed: %v", err)
+	}
+
+	_, err = store.Load("wrong-passphrase")
+	if err == nil {
+		t.Fatal("Expected error when loading with wrong passphrase, but got nil")
+	}
+}
+
 func TestFileIdentityStore_LoadNonExistent(t *testing.T) {
 	tempDir := t.TempDir()
 	keyPath := filepath.Join(tempDir, "nonexistent.key")
 	store := crypto.NewFileIdentityStore(keyPath)
 
-	_, err := store.Load()
+	_, err := store.Load("any-passphrase")
 	if err == nil {
 		t.Fatal("Expected error when loading non-existent identity, but got nil")
+	}
+
+	// Ensure it returns the specific sentinel error so the use case can handle initialization properly
+	if err != crypto.ErrNoIdentityFound {
+		t.Fatalf("Expected ErrNoIdentityFound, got: %v", err)
 	}
 }
