@@ -51,6 +51,11 @@ func (m *MockSessionManager) GetSession(remoteNodeID []byte) (crypto.SecureSessi
 
 func (m *MockSessionManager) SetSession(remoteNodeID []byte, session crypto.SecureSession) {}
 
+func (m *MockSessionManager) DeleteSession(remoteNodeID []byte) error {
+	// Mock implementation - just succeed
+	return nil
+}
+
 // MockServerStream simulates an incoming QUIC stream containing a serialized JSON message.
 type MockServerStream struct {
 	data *bytes.Buffer

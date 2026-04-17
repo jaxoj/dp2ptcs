@@ -16,4 +16,5 @@ type SecureSession interface {
 type SessionManager interface {
 	GetSession(remoteNodeID []byte) (SecureSession, error)
 	SetSession(remoteNodeID []byte, session SecureSession)
+	DeleteSession(remoteNodeID []byte) error
 }
