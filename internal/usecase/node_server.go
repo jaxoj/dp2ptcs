@@ -44,6 +44,9 @@ func (s *NodeServer) Start(ctx context.Context, address string, handler MessageH
 		listener.Close()
 	}()
 
+	// Ensure session cleanup on shutdown
+	defer s.shutdownSessions()
+
 	for {
 		// Accept a new physical QUIC Connection
 		conn, err := listener.Accept()
@@ -85,9 +88,16 @@ func (s *NodeServer) handleConnection(ctx context.Context, conn transport.Connec
 	}
 }
 
-// handleSecureStream enforces the X3DH Handshake before allowing Protobuf parsing.
+// handleStream enforces the X3DH Handshake before allowing Protobuf parsing.
+// On stream closure or persistent errors, the associated session is cleaned up.
 func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandler, session crypto.SecureSession, remoteIdentPub []byte) {
-	defer stream.Close()
+	defer func() {
+		stream.Close()
+		// Clean up the session when the stream closes (normal or error path).
+		if err := s.sessionMgr.DeleteSession(remoteIdentPub); err != nil {
+			log.Printf("Failed to delete session for peer %x: %v", remoteIdentPub[:8], err)
+		}
+	}()
 
 	for {
 
@@ -137,4 +147,14 @@ func (s *NodeServer) handleStream(stream transport.Stream, handler MessageHandle
 		}
 	}
 
+}
+
+// shutdownSessions gracefully shuts down the session manager during node shutdown.
+// This ensures the background cleanup goroutine terminates cleanly.
+func (s *NodeServer) shutdownSessions() {
+	// Check if sessionMgr implements the Shutdown method (graceful shutdown support).
+	// We use a type assertion to maintain backward compatibility.
+	if sm, ok := s.sessionMgr.(*InMemorySessionManager); ok {
+		sm.Shutdown()
+	}
 }
