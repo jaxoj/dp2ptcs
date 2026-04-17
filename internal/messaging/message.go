@@ -15,6 +15,6 @@ type Message struct {
 	Type                MessageType
 	DHPublicKey         []byte // Ephemeral public key for Post-Compromise Security
 	Payload             []byte // This will hold the Double Ratchet encrypted ciphertext later
-	MessageNumber       uint32 // Sequence number for out-of-order handling
-	PreviousChainLength uint32 // Number of skipped messages
+	MessageNumber       uint64 // Monotonic sequence number (1-indexed) for ordering and replay detection
+	PreviousChainLength uint32 // Number of skipped messages in the previous DH ratchet epoch
 }
