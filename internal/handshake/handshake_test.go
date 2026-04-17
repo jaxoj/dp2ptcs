@@ -63,8 +63,8 @@ func TestHandshakeProtocol_EstablishSecureSession(t *testing.T) {
 
 	// Final verification: Ensure the sessions can actually talk to each other
 	msg := []byte("HANDSHAKE_SUCCESS")
-	ciphertext, dhHeader, _ := aliceSession.Encrypt(msg)
-	decrypted, err := bobSession.Decrypt(ciphertext, dhHeader)
+	ciphertext, dhHeader, msgNum, prevLen, _ := aliceSession.Encrypt(msg)
+	decrypted, err := bobSession.Decrypt(ciphertext, dhHeader, msgNum, prevLen)
 
 	if err != nil || !bytes.Equal(msg, decrypted) {
 		t.Fatalf("Post-handshake encryption failed. The root keys must have mismatched.")

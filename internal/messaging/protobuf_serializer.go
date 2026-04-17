@@ -19,10 +19,12 @@ func NewProtobufSerializer() *ProtobufSerializer {
 func (ps *ProtobufSerializer) Encode(w io.Writer, msg Message) error {
 	// Map our domain entity to Protobuf DTO
 	pbMsg := &pb.TacticalMessage{
-		SenderId:    msg.SenderID,
-		Type:        pb.MessageType(msg.Type),
-		DhPublicKey: msg.DHPublicKey,
-		Payload:     msg.Payload,
+		SenderId:            msg.SenderID,
+		Type:                pb.MessageType(msg.Type),
+		DhPublicKey:         msg.DHPublicKey,
+		Payload:             msg.Payload,
+		MessageNumber:       msg.MessageNumber,
+		PreviousChainLength: msg.PreviousChainLength,
 	}
 
 	data, err := proto.Marshal(pbMsg)
@@ -64,10 +66,12 @@ func (ps *ProtobufSerializer) Decode(r io.Reader) (Message, error) {
 	}
 
 	return Message{
-		SenderID:    pbMsg.SenderId,
-		Type:        MessageType(pbMsg.Type),
-		DHPublicKey: pbMsg.DhPublicKey,
-		Payload:     pbMsg.Payload,
+		SenderID:            pbMsg.SenderId,
+		Type:                MessageType(pbMsg.Type),
+		DHPublicKey:         pbMsg.DhPublicKey,
+		Payload:             pbMsg.Payload,
+		MessageNumber:       pbMsg.MessageNumber,
+		PreviousChainLength: pbMsg.PreviousChainLength,
 	}, nil
 }
 

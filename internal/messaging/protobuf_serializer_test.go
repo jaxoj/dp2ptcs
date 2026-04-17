@@ -6,13 +6,16 @@ import (
 	"testing"
 )
 
-func TestPotobugSerializer_EncodeDecode(t *testing.T) {
+func TestProtobufSerializer_EncodeDecode(t *testing.T) {
 	serializer := &messaging.ProtobufSerializer{}
 
 	originalMsg := messaging.Message{
-		SenderID: []byte{0xDE, 0xAD, 0xBE, 0xEF}, // Simulated 32-byte Ed25519 public key
-		Type:     messaging.TypeCommand,
-		Payload:  []byte("EXECUTE_ROTATION"),
+		SenderID:            []byte{0xDE, 0xAD, 0xBE, 0xEF}, // Simulated 32-byte Ed25519 public key
+		Type:                messaging.TypeCommand,
+		DHPublicKey:         []byte{0x12, 0x34},
+		Payload:             []byte("EXECUTE_ROTATION"),
+		MessageNumber:       42,
+		PreviousChainLength: 0,
 	}
 
 	// bytes.Buffer implements both io.Reader and io.Writer, perfectly simulating our Stream
@@ -41,7 +44,16 @@ func TestPotobugSerializer_EncodeDecode(t *testing.T) {
 	if decodedMsg.Type != originalMsg.Type {
 		t.Errorf("expected Type %v, got %v", originalMsg.Type, decodedMsg.Type)
 	}
+	if !bytes.Equal(decodedMsg.DHPublicKey, originalMsg.DHPublicKey) {
+		t.Errorf("expected DHPublicKey %x, got %x", originalMsg.DHPublicKey, decodedMsg.DHPublicKey)
+	}
 	if !bytes.Equal(decodedMsg.Payload, originalMsg.Payload) {
 		t.Errorf("expected Payload %s, got %s", originalMsg.Payload, decodedMsg.Payload)
+	}
+	if decodedMsg.MessageNumber != originalMsg.MessageNumber {
+		t.Errorf("expected MessageNumber %d, got %d", originalMsg.MessageNumber, decodedMsg.MessageNumber)
+	}
+	if decodedMsg.PreviousChainLength != originalMsg.PreviousChainLength {
+		t.Errorf("expected PreviousChainLength %d, got %d", originalMsg.PreviousChainLength, decodedMsg.PreviousChainLength)
 	}
 }

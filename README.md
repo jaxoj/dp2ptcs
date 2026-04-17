@@ -1,4 +1,5 @@
 # DP2PTCS (Decentralized Peer-2-Peer Tactical Communication System)
+
 ## 1. Project Overview
 
 In high-stakes tactical or conflict environments, communication infrastructure is a primary target. Traditional centralized networks rely on single points of failure—servers, DNS registries, or fixed routing hubs—which can be seized, targeted by kinetic strikes, or disabled via Distributed Denial of Service (DDoS) attacks.
@@ -27,7 +28,6 @@ To locate peers without a central server, the system utilizes a **Kademlia Distr
 
 $$d(x, y) = x \oplus y$$
 
-
 * **Bootstrapping:** Nodes must connect to the network initially. In tactical environments, bootstrapping occurs via pre-shared static IPs (e.g., a command vehicle) or local multicast (mDNS) if operating on a localized mesh.
 * **Address Resolution:** To find a peer, a node queries the DHT for the target's Node ID. The network iteratively returns the IP/Port of peers progressively "closer" (in XOR distance) to the target until the target's current network address is resolved.
 
@@ -48,18 +48,18 @@ The system abandons TCP in favor of **QUIC** (via `quic-go`), operating directly
 * **Connection Migration:** *This is critical for tactical networks.* A node can transition from a WiFi mesh to an LTE network or SATCOM link. Because QUIC identifies connections by a Connection ID rather than an IP/Port tuple, the session survives the IP change without renegotiating cryptography.
 * **Congestion Control:** Custom congestion control algorithms (like BBR) can be tuned for high-latency, lossy links (e.g., tactical radios).
 
-## 6. Cryptographic Identity
+## 6. Cryptographic Identity & Key Storage
 
-The system relies on a Zero-Knowledge, decentralized identity model.
+The system relies on a Zero-Knowledge, decentralized identity model explicitly designed to withstand physical device capture.
 
 * **Generation:** A local Ed25519 keypair is generated on the device.
 * **Identity Mapping:** The user's network identity is purely the hash of their public key:
 
 $$ID = H(PK_{Ed25519})$$
 
-
 * **Verification:** There are no usernames or centralized Certificate Authorities (CAs). Identities are verified out-of-band (e.g., scanning a QR code on a comrade's device before deployment) or via Trust on First Use (TOFU).
 * **Impersonation Defense:** Any message must be signed by the private key corresponding to the public key from which the ID was derived.
+* **Encryption at Rest (Anti-Capture):** Identity keys are never stored in plaintext on the filesystem. The `node.key` is encrypted using **AES-256-GCM**. The encryption key is derived from a user-provided operational passphrase using **Argon2id**. Standard OS permissions (`0600`) act merely as a defense-in-depth measure.
 
 ## 7. End-to-End Encryption
 
@@ -69,8 +69,6 @@ All payloads are secured using the Signal Protocol architecture.
 * **Double Ratchet Algorithm:** Once the session is established, every single message sent generates a new, unique message key.
 * **Perfect Forward Secrecy (PFS):** If a node is captured and its current keys are extracted, past messages cannot be decrypted because previous keys are deterministically destroyed.
 * **Post-Compromise Security (PCS):** If a node is temporarily compromised but regains security, new Diffie-Hellman ratchets mathematically "heal" the session, locking the attacker out of future messages.
-
-
 
 ## 8. Metadata Protection
 
@@ -103,7 +101,7 @@ A realistic Go implementation roadmap:
 * **Phase 1 – Basic P2P Node:** Establish the Go binary. Implement basic UDP listeners, Ed25519 key generation, and basic CLI interactions.
 * **Phase 2 – DHT Peer Discovery:** Integrate `go-libp2p-kad-dht`. Prove nodes can find each other across a LAN without hardcoded IPs.
 * **Phase 3 – QUIC Transport:** Replace raw UDP with `quic-go`. Implement connection multiplexing and test connection migration.
-* **Phase 4 – Cryptographic Identity:** Build the key store. Implement identity fingerprinting and out-of-band verification logic.
+* **Phase 4 – Cryptographic Identity:** Build the encrypted key store (Argon2id + AES-256-GCM). Implement identity fingerprinting and out-of-band verification logic.
 * **Phase 5 – E2EE Messaging:** Implement X3DH and the Double Ratchet. Build the messaging structs and serialization (using Protocol Buffers).
 * **Phase 6 – NAT Traversal:** Integrate `pion/ice` and set up STUN resolution. Test across real-world cellular/ISP boundaries.
 * **Phase 7 – Metadata Protection:** Implement constant-rate cover traffic and uniform packet padding.
@@ -115,7 +113,9 @@ A realistic Go implementation roadmap:
 ├── cmd/
 │   └── node/              # Main application entrypoint (main.go)
 ├── internal/
-│   ├── crypto/            # Ed25519, X3DH, Double Ratchet, KDFs
+│   ├── crypto/            # Ed25519, Argon2id Keystore, X3DH, Double Ratchet
+│   ├── domain/            # Peer, Discoverer
+    ├── handshake/         # Handshake
 │   ├── dht/               # Kademlia implementation/wrappers
 │   ├── messaging/         # Protobuf definitions, message queuing, DTN
 │   ├── network/           # IP routing, ICE/STUN/NAT traversal logic
@@ -124,7 +124,6 @@ A realistic Go implementation roadmap:
 ├── deployments/           # Dockerfiles, Mininet simulation scripts
 ├── go.mod
 └── go.sum
-
 ```
 
 ## 13. Deployment and Testing
@@ -138,20 +137,34 @@ Rigorous testing is required for a military-grade application:
 ## 14. Security Considerations
 
 * **Sybil Attacks:** An attacker floods the DHT with thousands of fake nodes to isolate a target (Eclipse attack). *Mitigation:* Require a computationally expensive Proof-of-Work (PoW) to generate a valid Node ID, or use a pre-shared cryptographic whitelist of authorized deployment keys.
-* **Compromised Peers:** A physical device is captured. *Mitigation:* Remote kill-switches via the DHT, password-protected hardware enclaves (TPM/Secure Enclave) for key storage, and PFS limiting retroactive decryption.
+* **Compromised Peers (Device Capture):** A physical device is captured by an adversary. *Mitigation:* The `node.key` is encrypted at rest using AES-GCM and Argon2id. Without the operator's passphrase, the node's cryptographic identity cannot be extracted from the filesystem. Furthermore, remote kill-switches via the DHT and PFS limit retroactive decryption.
 * **Traffic Analysis:** *Mitigation:* The cover traffic and uniform packet sizing detailed in Section 8.
 
 ## 15. Future Improvements
 
 To expand this beyond a portfolio project into a production-ready C2 system:
 
+* **Hardware-Backed Security:** Migrating key wrapping from software-based Argon2id to TPM 2.0 or Secure Enclave integrations.
 * **Mesh Radio Integration:** Abstracting the transport layer to operate over serial interfaces connected to LoRa radios or military MANET (Mobile Ad-hoc Network) hardware.
 * **Anonymous Routing (Onion Layer):** Implementing Sphinx packet formats to route messages through 3+ nodes blindly, fully masking sender and receiver identities.
 * **Mobile Nodes:** Compiling the core Go logic via `gomobile` into Android/AAR libraries to run on ATAK (Android Team Awareness Kit) devices.
 
 ---
 
-## 16. QUIC UDP Buffer Warning (Important)
+## 16. Engineering Note: Identity Key Passphrase Injection
+
+Due to the security upgrades in the `internal/crypto` package, the node binary can no longer boot silently if an identity key already exists. 
+
+The `FileIdentityStore.Load()` method now requires a passphrase to decrypt the AES-GCM wrapped `node.key`. Engineers deploying headless nodes must design a secure passphrase injection pipeline on startup. This can be handled via:
+* An interactive prompt on `stdin` for operator-manned terminals.
+* A temporary `tmpfs` injected environment variable during container orchestration.
+* A physical USB key exchange for field deployments.
+
+Ensure your deployment scripts account for this authentication step to prevent indefinite hanging during the node initialization sequence.
+
+---
+
+## 17. QUIC UDP Buffer Warning (Important)
 
 When running this system with `quic-go`, you may encounter warnings related to UDP buffer sizes.
 
@@ -214,5 +227,3 @@ After applying these settings and restarting the application:
 * The warning should disappear
 * QUIC operates without OS-level throttling
 * Network throughput and reliability improve significantly
-
----

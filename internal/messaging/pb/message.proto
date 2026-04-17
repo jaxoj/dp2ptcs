@@ -14,4 +14,6 @@ message TacticalMessage {
   MessageType type = 2;
   bytes dh_public_key = 3;  // Ephemeral X25519 public key for the DH Ratchet (32 bytes)
   bytes payload = 4;  // The ChaCha20-Poly1305 encrypted ciphertext and MAC
+  uint32 message_number = 5;  // Sequence number for out-of-order handling
+  uint32 previous_chain_length = 6;  // Number of skipped messages
 }
