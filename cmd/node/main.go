@@ -51,7 +51,8 @@ func run(ctx context.Context, out io.Writer, keyPath, listenAddr string, args []
 	store := crypto.NewFileIdentityStore(keyPath)
 	idManager := usecase.NewIdentityManager(store, rand.Reader)
 
-	identity, err := idManager.LoadOrCreate()
+	const passphrase = "operation-alpha-key"
+	identity, err := idManager.LoadOrCreate(passphrase)
 	if err != nil {
 		return fmt.Errorf("failed to load or create identity: %w", err)
 	}

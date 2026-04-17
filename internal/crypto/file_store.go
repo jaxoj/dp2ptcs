@@ -13,8 +13,8 @@ var ErrNoIdentityFound = errors.New("no cryptographic identity found at specific
 
 // IdentityStore defines the interface for storing and retrieving cryptographic identities.
 type IdentityStore interface {
-	Save(id *Identity) error
-	Load() (*Identity, error)
+	Save(id *Identity, passphrase string) error
+	Load(passphrase string) (*Identity, error)
 }
 
 // FileIdentityStore implements IdentityStore using the filesystem for persistence.
@@ -28,12 +28,17 @@ func NewFileIdentityStore(filePath string) *FileIdentityStore {
 }
 
 // Save writes the private key of the identity to the specified file path with strict permissions.
-func (s *FileIdentityStore) Save(id *Identity) error {
+func (s *FileIdentityStore) Save(id *Identity, passphrase string) error {
+	encryptedData, err := EncryptKey(id.PrivateKey, passphrase)
+	if err != nil {
+		return err
+	}
+
 	// Delegate to the OS-specific implementation
-	return saveFileSecure(s.filePath, id.PrivateKey)
+	return saveFileSecure(s.filePath, encryptedData)
 }
 
-func (s *FileIdentityStore) Load() (*Identity, error) {
+func (s *FileIdentityStore) Load(passphrase string) (*Identity, error) {
 	data, err := os.ReadFile(s.filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -42,11 +47,16 @@ func (s *FileIdentityStore) Load() (*Identity, error) {
 		return nil, err
 	}
 
-	if len(data) != ed25519.PrivateKeySize {
-		return nil, fmt.Errorf("invalid key size: expected %d, got %d", ed25519.PrivateKeySize, len(data))
+	privKeyBytes, err := DecryptKey(data, passphrase)
+	if err != nil {
+		return nil, err
 	}
 
-	priv := ed25519.PrivateKey(data)
+	if len(privKeyBytes) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("invalid key size: expected %d, got %d", ed25519.PrivateKeySize, len(privKeyBytes))
+	}
+
+	priv := ed25519.PrivateKey(privKeyBytes)
 
 	// Reconstruct the public key from the private key
 	// In Go, ed25519.PrivateKey is 64 bytes; the last 32 bytes are the public key.
