@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"dp2ptcs/internal/crypto"
 	"dp2ptcs/internal/handshake"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -68,5 +69,43 @@ func TestHandshakeProtocol_EstablishSecureSession(t *testing.T) {
 
 	if err != nil || !bytes.Equal(msg, decrypted) {
 		t.Fatalf("Post-handshake encryption failed. The root keys must have mismatched.")
+	}
+}
+
+type partialHandshakeReader struct {
+	data []byte
+	sent bool
+}
+
+func (p *partialHandshakeReader) Read(b []byte) (int, error) {
+	if p.sent {
+		return 0, io.EOF
+	}
+	n := copy(b, p.data)
+	p.data = p.data[n:]
+	if len(p.data) == 0 {
+		p.sent = true
+		return n, io.EOF
+	}
+	return n, nil
+}
+
+func (p *partialHandshakeReader) Write(b []byte) (int, error) {
+	return len(b), nil
+}
+
+func TestHandshakeProtocol_ReadFromPartialStreamFails(t *testing.T) {
+	_, alicePub := genIdentKey()
+	bobPriv, bobPub := genIdentKey()
+
+	stream := &partialHandshakeReader{data: alicePub}
+	bobHandshake := handshake.NewHandshakeProtocol(bobPriv, bobPub)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_, _, err := bobHandshake.Respond(ctx, stream)
+	if err == nil {
+		t.Fatal("expected error when peer closes stream during handshake")
 	}
 }
