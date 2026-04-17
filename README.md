@@ -1,91 +1,3 @@
-Read [](file:///Compacted conversation
-
-Read [](file:///home/manssif/Projects/dp2ptcs/go.mod)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/README.md#1-1), lines 1 to 100
-
-Read [](file:///home/manssif/Projects/dp2ptcs/cmd/node/main.go#1-1), lines 1 to 100
-
-Read [](file:///home/manssif/Projects/dp2ptcs/cmd/node/app_router.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/domain/peer.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/domain/discoverer.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/identity.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/file_store.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/keystore.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/double_ratched.go#1-1), lines 1 to 150
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/double_ratched.go#150-150), lines 150 to 187
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/root_chain.go#1-1), lines 1 to 50
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/kdf_chain.go#1-1), lines 1 to 50
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/secure_session.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/x3gh.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/messaging/message.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/messaging/serializer.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/messaging/protobuf_serializer.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/messaging/handshake.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/handshake/handshake.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/transport/transport.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/transport/quic_transport.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/transport/tls_helper.go#1-1), lines 1 to 50
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/dht/service.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/dht/routing_table.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/dht/distance.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/dht/client.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/dht/network_client.go#1-1), lines 1 to 100
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/dht/lookup.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/network)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/network/kademlia_discoverer.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/usecase/discovery.go#1-1), lines 1 to 50
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/usecase/identity_manager.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/usecase/session_manager.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/usecase/node_server.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/usecase/connection_manager.go)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/messaging/pb/message.proto)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/messaging/pb/dht.proto)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/cmd/node/main_test.go#1-1), lines 1 to 50
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto)
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/crypto/double_ratchet_test.go#1-1), lines 1 to 100
-
-Read [](file:///home/manssif/Projects/dp2ptcs/internal/handshake/handshake_test.go#1-1), lines 1 to 100
-
-Ran terminal command: find /home/manssif/Projects/dp2ptcs -name "*.go" -exec wc -l {} + | tail -1
-
 # DP2PTCS (Decentralized Peer-2-Peer Tactical Communication System) - Technical Documentation
 
 ## 1. System Overview
@@ -399,6 +311,26 @@ type Serializer interface {
     Encode(w io.Writer, msg Message) error
     Decode(r io.Reader) (Message, error)
 }
+```
+dp2ptcs/
+├── cmd/node/           # Application entry point
+│   ├── main.go        # Dependency injection and startup
+│   ├── app_router.go  # Message routing logic
+│   └── main_test.go   # Integration tests
+├── internal/           # Private application code
+│   ├── crypto/        # Cryptographic primitives
+│   ├── dht/           # Kademlia DHT implementation
+│   ├── domain/        # Domain entities and interfaces
+│   ├── handshake/     # X3DH handshake protocol
+│   ├── messaging/     # Message serialization
+│   │   └── pb/        # Protocol Buffer definitions
+│   ├── network/       # Network discovery adapters
+│   ├── transport/     # QUIC transport layer
+│   └── usecase/       # Business use cases
+├── go.mod             # Go module definition
+├── go.sum             # Dependency checksums
+├── LICENSE            # MIT license
+└── README.md          # Project overview
 ```
 
 ### Request/Response Structure
