@@ -50,7 +50,7 @@ func (rt *RoutingTable) AddPeer(peer *domain.Peer) bool {
 
 	// Check if peer already exists in the bucket
 	for i, p := range bucket {
-		if bytes.Equal(rt.localID, p.ID) {
+		if bytes.Equal(peer.ID, p.ID) {
 			// Move the peer to the tail (to be the most recently seen)
 			bucket = append(bucket[:i], bucket[i+1:]...)
 			bucket = append(bucket, p)
