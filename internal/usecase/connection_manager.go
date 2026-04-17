@@ -41,19 +41,23 @@ func (cm *ConnectionManager) ConnectToPeer(ctx context.Context, peer domain.Peer
 	if len(peer.Addresses) == 0 {
 		return nil, fmt.Errorf("no routable addresses for peer '%x'", peer.ID)
 	}
+	return cm.DialAddresses(ctx, peer.Addresses)
+}
 
-	// Create a derived context to cancel pending dials once we have a winner
+// DialAddresses attempts concurrent dialing to all provided addresses and returns the first successful connection.
+func (cm *ConnectionManager) DialAddresses(ctx context.Context, addresses []string) (transport.Connection, error) {
+	if len(addresses) == 0 {
+		return nil, errors.New("no addresses provided for dialing")
+	}
+
+	// Create a derived context to cancel pending dials once we have a winner.
 	dialCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Unbuffered channel for the winning connection
 	resCh := make(chan transport.Connection)
+	errCh := make(chan error, len(addresses))
 
-	// Buffered error channel to prevent failing goroutines from blocking
-	errCh := make(chan error, len(peer.Addresses))
-
-	// Launch a concurrent dial for every known connection
-	for _, add := range peer.Addresses {
+	for _, add := range addresses {
 		go func(targetAddr string) {
 			conn, err := cm.transport.Dial(targetAddr)
 			if err != nil {
@@ -61,38 +65,26 @@ func (cm *ConnectionManager) ConnectToPeer(ctx context.Context, peer domain.Peer
 				return
 			}
 
-			// If dial succeeds, try to pass it to the result channel
 			select {
 			case resCh <- conn:
-				// We are the first to succeed! The main loop will catch this.
 			case <-dialCtx.Done():
-				// We succeeded, but another goroutine beat us to it and cancelled the context.
-				// We MUST close this redundant connection to prevent resource leaks (zombie connections).
 				conn.Close()
-
 			}
 		}(add)
 	}
 
 	var lastErr error
-
-	// Wait for exactly len(p.Addresses) events (either a success or an error)
-	for i := 0; i < len(peer.Addresses); i++ {
+	for i := 0; i < len(addresses); i++ {
 		select {
 		case conn := <-resCh:
-			// The first successful connection arrived.
-			// Calling cancel() instantly aborts the other in-flight transport.Dial() calls.
 			cancel()
 			return conn, nil
 		case err := <-errCh:
-			// Capture the error but keep waiting for other goroutines to finish
 			lastErr = err
 		case <-dialCtx.Done():
-			// The parent context (e.g., a global 5-second timeout) expired before any dial succeeded
 			return nil, ctx.Err()
 		}
 	}
 
-	// If the loop finishes, it means we received len(p.Addresses) errors and 0 successes.
-	return nil, fmt.Errorf("all %d concurrent connection attempts failed, last error: %w", len(peer.Addresses), lastErr)
+	return nil, fmt.Errorf("all %d concurrent connection attempts failed, last error: %w", len(addresses), lastErr)
 }

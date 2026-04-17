@@ -14,15 +14,15 @@ import (
 )
 
 type NetworkRPCClient struct {
-	transport  transport.Transport
+	dialer     transport.MultiDialer
 	serializer messaging.Serializer
 	handshake  *handshake.HandshakeProtocol
 	localID    []byte
 }
 
-func NewNetworkRPCClient(tr transport.Transport, ser messaging.Serializer, hs *handshake.HandshakeProtocol, localID []byte) *NetworkRPCClient {
+func NewNetworkRPCClient(dialer transport.MultiDialer, ser messaging.Serializer, hs *handshake.HandshakeProtocol, localID []byte) *NetworkRPCClient {
 	return &NetworkRPCClient{
-		transport:  tr,
+		dialer:     dialer,
 		serializer: ser,
 		handshake:  hs,
 		localID:    localID,
@@ -35,8 +35,8 @@ func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *domain.Peer, targ
 		return nil, errors.New("peer has no known addresses")
 	}
 
-	// Dial the peer's primary address
-	conn, err := c.transport.Dial(peer.Addresses[0])
+	// Dial the peer's known addresses using Happy Eyeballs style fallback.
+	conn, err := c.dialer.DialAddresses(ctx, peer.Addresses)
 	if err != nil {
 		return nil, err
 	}
