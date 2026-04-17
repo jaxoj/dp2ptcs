@@ -19,7 +19,7 @@ func NewSymmetricSession(sendRootKey, recvRootKey []byte) *SymmetricSession {
 	return &SymmetricSession{sendChain: NewKDFChain(sendRootKey), recvChain: NewKDFChain(recvRootKey)}
 }
 
-func (s *SymmetricSession) Encrypt(plaintext []byte) ([]byte, []byte, uint32, uint32, error) {
+func (s *SymmetricSession) Encrypt(plaintext []byte) ([]byte, []byte, uint64, uint32, error) {
 	// Ratchet the send chain forward to get a one-time message key
 	msgKey, err := s.sendChain.Ratchet()
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *SymmetricSession) Encrypt(plaintext []byte) ([]byte, []byte, uint32, ui
 	return ciphertext, nil, 0, 0, nil
 }
 
-func (s *SymmetricSession) Decrypt(ciphertext []byte, remoteDHPubKey []byte, messageNumber uint32, previousChainLength uint32) ([]byte, error) {
+func (s *SymmetricSession) Decrypt(ciphertext []byte, remoteDHPubKey []byte, messageNumber uint64, previousChainLength uint32) ([]byte, error) {
 	// Ratchet the receive chain forward to get the matching one-time message key
 	msgKey, err := s.recvChain.Ratchet()
 	if err != nil {

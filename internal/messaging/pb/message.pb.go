@@ -78,8 +78,8 @@ type TacticalMessage struct {
 	Type                MessageType `protobuf:"varint,2,opt,name=type,proto3,enum=pb.MessageType" json:"type,omitempty"`
 	DhPublicKey         []byte      `protobuf:"bytes,3,opt,name=dh_public_key,json=dhPublicKey,proto3" json:"dh_public_key,omitempty"`                          // Ephemeral X25519 public key for the DH Ratchet (32 bytes)
 	Payload             []byte      `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"`                                                       // The ChaCha20-Poly1305 encrypted ciphertext and MAC
-	MessageNumber       uint32      `protobuf:"varint,5,opt,name=message_number,json=messageNumber,proto3" json:"message_number,omitempty"`                     // Sequence number for out-of-order handling
-	PreviousChainLength uint32      `protobuf:"varint,6,opt,name=previous_chain_length,json=previousChainLength,proto3" json:"previous_chain_length,omitempty"` // Number of skipped messages
+	MessageNumber       uint64      `protobuf:"varint,5,opt,name=message_number,json=messageNumber,proto3" json:"message_number,omitempty"`                     // Monotonic sequence number (1-indexed) for replay detection and ordering
+	PreviousChainLength uint32      `protobuf:"varint,6,opt,name=previous_chain_length,json=previousChainLength,proto3" json:"previous_chain_length,omitempty"` // Number of skipped messages in the previous ratchet epoch
 }
 
 func (x *TacticalMessage) Reset() {
@@ -142,7 +142,7 @@ func (x *TacticalMessage) GetPayload() []byte {
 	return nil
 }
 
-func (x *TacticalMessage) GetMessageNumber() uint32 {
+func (x *TacticalMessage) GetMessageNumber() uint64 {
 	if x != nil {
 		return x.MessageNumber
 	}
@@ -172,7 +172,7 @@ var file_internal_messaging_pb_message_proto_rawDesc = []byte{
 	0x4b, 0x65, 0x79, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x18, 0x04,
 	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x25, 0x0a,
 	0x0e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x5f, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x4e, 0x75,
+	0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0d, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x4e, 0x75,
 	0x6d, 0x62, 0x65, 0x72, 0x12, 0x32, 0x0a, 0x15, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73,
 	0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x06, 0x20,
 	0x01, 0x28, 0x0d, 0x52, 0x13, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x43, 0x68, 0x61,
