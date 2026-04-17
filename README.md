@@ -312,6 +312,26 @@ type Serializer interface {
     Decode(r io.Reader) (Message, error)
 }
 ```
+dp2ptcs/
+├── cmd/node/           # Application entry point
+│   ├── main.go        # Dependency injection and startup
+│   ├── app_router.go  # Message routing logic
+│   └── main_test.go   # Integration tests
+├── internal/           # Private application code
+│   ├── crypto/        # Cryptographic primitives
+│   ├── dht/           # Kademlia DHT implementation
+│   ├── domain/        # Domain entities and interfaces
+│   ├── handshake/     # X3DH handshake protocol
+│   ├── messaging/     # Message serialization
+│   │   └── pb/        # Protocol Buffer definitions
+│   ├── network/       # Network discovery adapters
+│   ├── transport/     # QUIC transport layer
+│   └── usecase/       # Business use cases
+├── go.mod             # Go module definition
+├── go.sum             # Dependency checksums
+├── LICENSE            # MIT license
+└── README.md          # Project overview
+```
 
 ### Request/Response Structure
 
