@@ -2,13 +2,73 @@ package crypto
 
 import (
 	"bytes"
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
 	"errors"
 	"io"
+	"time"
 
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/hkdf"
 )
+
+// PrekeyBundle contains the signed prekey material for X3DH handshake.
+// This prevents MITM attacks by allowing identity verification.
+type PrekeyBundle struct {
+	IdentityPub []byte    // ed25519 public key for identity verification
+	PrekeyPub   []byte    // X25519 prekey for X3DH
+	Signature   []byte    // ed25519 signature of IdentityPub + PrekeyPub
+	Expiry      time.Time // When this prekey expires
+}
+
+// GeneratePrekeyBundle creates a new signed prekey bundle.
+func GeneratePrekeyBundle(identityPriv ed25519.PrivateKey, identityPub ed25519.PublicKey) (*PrekeyBundle, error) {
+	// Generate X25519 prekey pair
+	prekeyPriv := make([]byte, 32)
+	if _, err := io.ReadFull(rand.Reader, prekeyPriv); err != nil {
+		return nil, err
+	}
+	prekeyPub, err := curve25519.X25519(prekeyPriv, curve25519.Basepoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create message to sign: IdentityPub + PrekeyPub
+	message := make([]byte, 0, 64)
+	message = append(message, identityPub...)
+	message = append(message, prekeyPub...)
+
+	// Sign the combined public keys
+	signature := ed25519.Sign(identityPriv, message)
+
+	return &PrekeyBundle{
+		IdentityPub: identityPub,
+		PrekeyPub:   prekeyPub,
+		Signature:   signature,
+		Expiry:      time.Now().Add(24 * time.Hour), // 24 hour TTL
+	}, nil
+}
+
+// VerifyPrekeyBundle verifies the signature and expiry of a prekey bundle.
+func VerifyPrekeyBundle(bundle *PrekeyBundle) error {
+	// Check expiry
+	if time.Now().After(bundle.Expiry) {
+		return errors.New("prekey bundle has expired")
+	}
+
+	// Recreate the signed message
+	message := make([]byte, 0, 64)
+	message = append(message, bundle.IdentityPub...)
+	message = append(message, bundle.PrekeyPub...)
+
+	// Verify signature
+	if !ed25519.Verify(bundle.IdentityPub, message, bundle.Signature) {
+		return errors.New("prekey bundle signature verification failed")
+	}
+
+	return nil
+}
 
 // InitiateX3DH performs the Triple Diffie-Hellman calculation from the perspective
 // of the node initiating the connection.

@@ -3,6 +3,7 @@ package handshake_test
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"dp2ptcs/internal/crypto"
 	"dp2ptcs/internal/handshake"
@@ -10,14 +11,13 @@ import (
 	"net"
 	"testing"
 	"time"
-
-	"golang.org/x/crypto/curve25519"
 )
 
-func genIdentKey() ([]byte, []byte) {
-	priv := make([]byte, 32)
-	rand.Read(priv)
-	pub, _ := curve25519.X25519(priv, curve25519.Basepoint)
+func genIdentKey() (ed25519.PrivateKey, ed25519.PublicKey) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		panic(err)
+	}
 	return priv, pub
 }
 

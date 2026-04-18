@@ -106,7 +106,7 @@ func (c *NetworkRPCClient) FindNode(ctx context.Context, peer *domain.Peer, targ
 	// Map the Protobuf DTOs back to our Domain Entities
 	var closestPeers []*domain.Peer
 	for _, pInfo := range resp.ClosestPeers {
-		peerObj, err := domain.NewPeer(pInfo.Id, pInfo.Addresses)
+		peerObj, err := domain.NewPeer(pInfo.Id, pInfo.Addresses, nil)
 		if err != nil {
 			log.Printf("Received invalid peer ID in DHT response: %v", err)
 			continue // Skip malformed peers, don't crash the routing lookup
