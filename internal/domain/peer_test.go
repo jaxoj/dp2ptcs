@@ -10,7 +10,7 @@ func TestNewPeer_Success(t *testing.T) {
 	validID := bytes.Repeat([]byte{0x01}, 32) // 32-bytes valid ID
 	addresses := []string{"192.168.1.100:9000", "10.0.0.5:9000"}
 
-	peer, err := domain.NewPeer(validID, addresses)
+	peer, err := domain.NewPeer(validID, addresses, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestNewPeer_InvalidIDLength(t *testing.T) {
 	invalidID := bytes.Repeat([]byte{0x01}, 16) // 16-bytes invalid ID
 	addresses := []string{"192.168.1.100:9000", "10.0.0.5:9000"}
 
-	_, err := domain.NewPeer(invalidID, addresses)
+	_, err := domain.NewPeer(invalidID, addresses, nil)
 	if err != domain.ErrInvalidNodeID {
 		t.Fatalf("expected error %v, got %v", domain.ErrInvalidNodeID, err)
 	}

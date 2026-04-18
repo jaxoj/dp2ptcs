@@ -9,7 +9,7 @@ import (
 
 func TestStaticDiscoverer_FindPeer_Sucess(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x0A}, 32)
-	bootstrapPeer, _ := domain.NewPeer(targetID, []string{"192.168.1.10:9000"})
+	bootstrapPeer, _ := domain.NewPeer(targetID, []string{"192.168.1.10:9000"}, nil)
 
 	// Create the discoverer with our known inviter peer
 	discoverer := network.NewStaticDiscoverer([]*domain.Peer{bootstrapPeer})
@@ -34,7 +34,7 @@ func TestStaticDiscoverer_FindPeer_Sucess(t *testing.T) {
 
 func TestStaticDiscoverer_FindPeer_NotFound(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0x0B}, 32)
-	bootstrapPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0x0A}, 32), []string{"192.168.1.10:9000"})
+	bootstrapPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0x0A}, 32), []string{"192.168.1.10:9000"}, nil)
 
 	discoverer := network.NewStaticDiscoverer([]*domain.Peer{bootstrapPeer})
 

@@ -13,15 +13,18 @@ var ErrPeerNotFound = errors.New("Peer not found in the network")
 type Peer struct {
 	ID        []byte   // 32-byte unique identifier for the peer
 	Addresses []string // List of network addresses"
+	Identity  []byte   // Verified ed25519 public key for identity pinning
 }
 
-func NewPeer(id []byte, addresses []string) (*Peer, error) {
+func NewPeer(id []byte, addresses []string, identity []byte) (*Peer, error) {
 	if len(id) != 32 {
 		return nil, ErrInvalidNodeID
 	}
 
+	// Identity can be nil for peers discovered via DHT before handshake
 	return &Peer{
 		ID:        id,
 		Addresses: addresses,
+		Identity:  identity,
 	}, nil
 }

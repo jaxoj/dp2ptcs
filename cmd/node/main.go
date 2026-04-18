@@ -109,7 +109,7 @@ func run(ctx context.Context, out io.Writer, keyPath, listenAddr string, args []
 	// ---------------------------------------------------------
 	// Define our bootstrap node (Command Post / Entry point)
 	cpID := bytes.Repeat([]byte{0xAA}, 32)
-	cpPeer, _ := domain.NewPeer(cpID, []string{"10.55.0.1:9000"})
+	cpPeer, _ := domain.NewPeer(cpID, []string{"10.55.0.1:9000"}, nil)
 
 	fmt.Fprintln(out, "Attempting to bootstrap to tactical network...")
 

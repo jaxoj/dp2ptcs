@@ -19,7 +19,7 @@ func (m *MockRPCClient) FindNode(targetID []byte, remote *domain.Peer) ([]*domai
 
 func TestKademliaDiscoverer_FindPeer_Success(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0xBB}, 32)
-	targetPeer, _ := domain.NewPeer(targetID, []string{"10.77.0.5:9000"})
+	targetPeer, _ := domain.NewPeer(targetID, []string{"10.77.0.5:9000"}, nil)
 
 	// Simulates the remote node returning a list that includes our target
 	mockRPC := &MockRPCClient{
@@ -28,7 +28,7 @@ func TestKademliaDiscoverer_FindPeer_Success(t *testing.T) {
 	}
 
 	// We need a known peer to ask. In a real scenario, this comes from our routing table.
-	knownPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0xAA}, 32), []string{"10.55.0.1:9000"})
+	knownPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0xAA}, 32), []string{"10.55.0.1:9000"}, nil)
 
 	discoverer := network.NewKademliaDiscoverer(mockRPC, knownPeer)
 
@@ -50,13 +50,13 @@ func TestKademliaDiscoverer_FindPeer_NotFound(t *testing.T) {
 	targetID := bytes.Repeat([]byte{0xCC}, 32)
 
 	// Simulate the remote node returning peers, but NOT our target
-	otherPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0xDD}, 32), []string{"10.77.0.6:9000"})
+	otherPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0xDD}, 32), []string{"10.77.0.6:9000"}, nil)
 	mockRPC := &MockRPCClient{
 		ReturnedPeers: []*domain.Peer{otherPeer},
 		Err:           nil,
 	}
 
-	knownPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0xAA}, 32), []string{"10.55.0.1:9000"})
+	knownPeer, _ := domain.NewPeer(bytes.Repeat([]byte{0xAA}, 32), []string{"10.55.0.1:9000"}, nil)
 	discoverer := network.NewKademliaDiscoverer(mockRPC, knownPeer)
 
 	// Act
