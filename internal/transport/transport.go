@@ -36,3 +36,9 @@ type Transport interface {
 	Dial(address string) (Connection, error)
 	Listen(address string) (Listener, error)
 }
+
+// MultiDialer supports dialing a list of addresses concurrently and returning the first successful connection.
+// This is useful for higher-level connection managers that implement Happy Eyeballs-style fallback across peers.
+type MultiDialer interface {
+	DialAddresses(ctx context.Context, addresses []string) (Connection, error)
+}

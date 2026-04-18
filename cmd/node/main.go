@@ -78,7 +78,8 @@ func run(ctx context.Context, out io.Writer, keyPath, listenAddr string, args []
 	routingTable := dht.NewRoutingTable(identity.NodeID, 20)
 	dhtService := dht.NewDHTService(routingTable)
 
-	rpcClient := dht.NewNetworkRPCClient(quicTransport, serializer, handshakeProtocol, identity.NodeID)
+	connManager := usecase.NewConnectionManager(nil, quicTransport)
+	rpcClient := dht.NewNetworkRPCClient(connManager, serializer, handshakeProtocol, identity.NodeID)
 	discoveryManager := usecase.NewDiscoveryManager(dhtService, rpcClient, identity.NodeID)
 
 	// ---------------------------------------------------------
