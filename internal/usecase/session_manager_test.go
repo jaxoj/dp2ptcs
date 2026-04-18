@@ -1,7 +1,9 @@
 package usecase_test
 
 import (
+	"dp2ptcs/internal/crypto"
 	"dp2ptcs/internal/usecase"
+	"sync"
 	"testing"
 	"time"
 )
@@ -159,5 +161,70 @@ func TestInMemorySessionManager_GetSessionUpdatesLastSeen(t *testing.T) {
 	_, err = mgr.GetSession(peerID)
 	if err != nil {
 		t.Errorf("Session should still exist after being accessed")
+	}
+}
+
+// TestInMemorySessionManager_UseSessionSerializes verifies that UseSession serializes access through the dispatcher.
+// Multiple concurrent calls to the same peer session should not execute simultaneously.
+func TestInMemorySessionManager_UseSessionSerializes(t *testing.T) {
+	mgr := usecase.NewInMemorySessionManager()
+	defer mgr.Shutdown()
+
+	peerID := []byte{0x01, 0x02, 0x03, 0x04}
+	session := &MockSecureSessionForSessionMgr{}
+
+	// Store a session
+	mgr.SetSession(peerID, session)
+
+	// Counter to track concurrent executions
+	var executionCount int
+	var maxConcurrent int
+	var mu sync.Mutex
+
+	// Use a channel to coordinate when operations are running
+	const numOps = 10
+	startCh := make(chan struct{})
+
+	// Launch multiple goroutines that all try to use the same session
+	var wg sync.WaitGroup
+	for i := 0; i < numOps; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			<-startCh // Wait for signal to start
+
+			err := mgr.UseSession(peerID, func(s crypto.SecureSession) error {
+				mu.Lock()
+				executionCount++
+				if executionCount > maxConcurrent {
+					maxConcurrent = executionCount
+				}
+				mu.Unlock()
+
+				// Small work to allow other goroutines to potentially interleave
+				time.Sleep(1 * time.Millisecond)
+
+				mu.Lock()
+				executionCount--
+				mu.Unlock()
+				return nil
+			})
+
+			if err != nil {
+				t.Errorf("UseSession failed: %v", err)
+			}
+		}(i)
+	}
+
+	// Start all operations at once
+	close(startCh)
+
+	// Wait for all to complete
+	wg.Wait()
+
+	// Verify that operations never ran concurrently
+	// maxConcurrent should be 1, not > 1, because the dispatcher serializes them
+	if maxConcurrent > 1 {
+		t.Errorf("expected max concurrent operations to be 1, got %d", maxConcurrent)
 	}
 }
